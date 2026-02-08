@@ -11,3 +11,7 @@ venv/
 # Local datasets (do not commit)
 data/**
 !data/**/.gitkeep
+
+# Local demo artifacts (do not commit binaries)
+demo_pack/
+demo_pack.zip

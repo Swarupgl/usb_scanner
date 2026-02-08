@@ -33,8 +33,9 @@ Write-Host "Using UPX: $upx"
 Write-Host "Source: $SourceDir"
 Write-Host "Benign out: $OutBenign"
 Write-Host "Packed out: $OutPacked"
+Write-Host "Target pairs: $Count"
 
-$files = Get-ChildItem -Path $SourceDir -ErrorAction Stop -Recurse | Where-Object {
+$files = Get-ChildItem -Path $SourceDir -Recurse -Force -ErrorAction SilentlyContinue | Where-Object {
     -not $_.PSIsContainer -and ($Extensions -contains $_.Extension.ToLower())
 }
 
@@ -43,13 +44,14 @@ if (-not $files) {
 }
 
 if ($Random) {
-    $files = $files | Get-Random -Count ([Math]::Min($Count, ($files | Measure-Object).Count))
-} else {
-    $files = $files | Select-Object -First $Count
+    # Shuffle
+    $files = $files | Get-Random -Count (($files | Measure-Object).Count)
 }
 
 $made = 0
 foreach ($f in $files) {
+    if ($made -ge $Count) { break }
+
     $base = [IO.Path]::GetFileNameWithoutExtension($f.Name)
     $ext = $f.Extension
 
@@ -71,15 +73,18 @@ foreach ($f in $files) {
 
     try {
         # Create packed copy from the benign copy so we keep a clean original
-        & $upx --best -o $packedPath $benignPath | Out-Null
+        & $upx --best --force -o $packedPath $benignPath 1>$null 2>$null
         if (Test-Path $packedPath) {
             $made++
             Write-Host "Packed: $packedName"
+        } else {
+            # Ensure we keep balanced pairs only
+            if (Test-Path $benignPath) { Remove-Item $benignPath -Force -ErrorAction SilentlyContinue }
         }
     } catch {
-        # Some binaries can't be packed; skip those
+        # Some binaries can't be packed; skip those and keep dataset balanced
         if (Test-Path $packedPath) { Remove-Item $packedPath -Force -ErrorAction SilentlyContinue }
-        Write-Host "Skip (UPX failed): $($f.Name)"
+        if (Test-Path $benignPath) { Remove-Item $benignPath -Force -ErrorAction SilentlyContinue }
     }
 }
 

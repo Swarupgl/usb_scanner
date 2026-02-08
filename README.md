@@ -50,6 +50,29 @@ python train.py --benign-dir data/benign --malicious-dir data/malicious --epochs
 python usb_monitor.py --scan data --checkpoint malconv_model.pth --extensions .exe --top 20 --metadata
 ```
 
+## Optional: Scan inside .zip archives
+
+By default the scanner looks at files on disk. You can also scan inside ZIP archives (e.g., a USB contains `something.zip`).
+
+Scan a zip and print results:
+
+```powershell
+python usb_monitor.py --scan demo_pack.zip --checkpoint demo_pack\malconv_model.pth --extensions .exe --archives --top 20 --metadata
+```
+
+If you want a “remove only the flagged files from the zip” style demo, use `--zip-mode sanitize`.
+This creates a new file `*.sanitized.zip` without the flagged members (the original zip is left unchanged):
+
+```powershell
+python usb_monitor.py --scan demo_pack.zip --checkpoint demo_pack\malconv_model.pth --extensions .exe --archives --zip-mode sanitize
+```
+
+For regular files (not archives), you can optionally quarantine flagged files:
+
+```powershell
+python usb_monitor.py --scan E:\\ --checkpoint malconv_model.pth --extensions .exe,.dll,.com --action quarantine --quarantine-dir quarantine
+```
+
 ### Quick populate benign samples (Windows)
 
 This copies a subset of Windows binaries into `data/benign` for training/demo.

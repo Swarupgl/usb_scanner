@@ -35,13 +35,37 @@ python train.py --demo-random --epochs 2 --batch-size 2 --out malconv_model.pth
 Scan a folder:
 
 ```powershell
-python usb_monitor.py --scan C:\\Windows\\System32 --checkpoint malconv_model.pth --extensions .exe,.dll,.com
+python usb_monitor.py --scan C:\\Windows\\System32 --checkpoint malconv_model.pth --extensions .exe,.dll,.com --top 20 --metadata
 ```
 
 Watch for USB insertion:
 
 ```powershell
 python usb_monitor.py --watch --checkpoint malconv_model.pth --extensions .exe,.dll,.com
+```
+
+## Demo idea (no malware): Packed vs Clean
+
+This is a safe demo that still supports a strong “structural analysis” story.
+
+1) Install UPX and ensure `upx` is on PATH (or place `tools\upx.exe`).
+
+2) Generate clean vs packed samples:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\make_packed_demo.ps1 -Count 50 -Random -Extensions .exe
+```
+
+3) Train:
+
+```powershell
+python train.py --benign-dir data/benign --malicious-dir data/malicious --epochs 5 --batch-size 4 --out malconv_model.pth
+```
+
+4) Scan:
+
+```powershell
+python usb_monitor.py --scan data --checkpoint malconv_model.pth --extensions .exe --top 20 --metadata
 ```
 
 ## How your friend can “see what’s happening”

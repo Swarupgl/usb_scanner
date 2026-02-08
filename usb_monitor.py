@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import math
 import os
 import time
 from typing import Optional
@@ -10,6 +12,41 @@ import torch
 
 from model import MalConv
 from preprocess import file_to_tensor
+
+
+def sha256_file(path: str, chunk_size: int = 1024 * 1024) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def shannon_entropy(path: str, max_bytes: int = 256 * 1024) -> Optional[float]:
+    """Compute Shannon entropy over the first max_bytes of a file.
+
+    Returns a value in [0, 8] for byte distributions.
+    """
+    try:
+        with open(path, "rb") as f:
+            data = f.read(max_bytes)
+        if not data:
+            return 0.0
+        counts = [0] * 256
+        for b in data:
+            counts[b] += 1
+        n = len(data)
+        ent = 0.0
+        for c in counts:
+            if c:
+                p = c / n
+                ent -= p * math.log2(p)
+        return ent
+    except Exception:
+        return None
 
 
 def load_model(checkpoint_path: str, device: torch.device) -> Optional[MalConv]:
@@ -31,9 +68,21 @@ def load_model(checkpoint_path: str, device: torch.device) -> Optional[MalConv]:
     return model
 
 
-def scan_path(model: Optional[MalConv], device: torch.device, root_path: str, threshold: float, max_len: int) -> None:
+def scan_path(
+    model: Optional[MalConv],
+    device: torch.device,
+    root_path: str,
+    threshold: float,
+    max_len: int,
+    *,
+    show_metadata: bool = False,
+    show_sha256: bool = False,
+    top_n: int = 0,
+) -> None:
     root_path = os.path.abspath(root_path)
     print(f"Scanning: {root_path}")
+
+    results: list[tuple[float, str, str]] = []  # (score, status, path)
 
     for root, _, files in os.walk(root_path):
         for name in files:
@@ -54,7 +103,33 @@ def scan_path(model: Optional[MalConv], device: torch.device, root_path: str, th
                 pred = model(data.to(device)).item()
 
             status = "MALICIOUS" if pred >= threshold else "CLEAN"
-            print(f"[{status}] {path} (score={pred:.4f})")
+            results.append((pred, status, path))
+
+            if show_metadata or show_sha256:
+                try:
+                    size = os.path.getsize(path)
+                except OSError:
+                    size = None
+                ent = shannon_entropy(path) if show_metadata else None
+                digest = sha256_file(path) if show_sha256 else None
+
+                meta_parts = [f"score={pred:.4f}"]
+                if size is not None:
+                    meta_parts.append(f"size={size}")
+                if ent is not None:
+                    meta_parts.append(f"entropy={ent:.3f}")
+                if digest is not None:
+                    meta_parts.append(f"sha256={digest}")
+                print(f"[{status}] {path} ({', '.join(meta_parts)})")
+            else:
+                print(f"[{status}] {path} (score={pred:.4f})")
+
+    if top_n and results:
+        top_n = max(0, int(top_n))
+        if top_n > 0:
+            print("\nTop suspicious (highest scores):")
+            for score, status, path in sorted(results, key=lambda t: t[0], reverse=True)[:top_n]:
+                print(f"[{status}] {path} (score={score:.4f})")
 
 
 # default extensions; overridden by CLI
@@ -90,6 +165,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--max-len", type=int, default=1048576, help="Used if checkpoint doesn't specify")
     parser.add_argument("--poll", type=int, default=3)
+    parser.add_argument("--top", type=int, default=0, help="If >0, print a Top-N suspicious summary")
+    parser.add_argument("--metadata", action="store_true", help="Show file size + entropy in output")
+    parser.add_argument("--sha256", action="store_true", help="Show SHA-256 hash in output")
     parser.add_argument(
         "--extensions",
         type=str,
@@ -122,7 +200,16 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.watch:
         watch_usb(model, device, threshold=args.threshold, max_len=max_len, poll_seconds=args.poll)
     else:
-        scan_path(model, device, args.scan, threshold=args.threshold, max_len=max_len)
+        scan_path(
+            model,
+            device,
+            args.scan,
+            threshold=args.threshold,
+            max_len=max_len,
+            show_metadata=args.metadata,
+            show_sha256=args.sha256,
+            top_n=args.top,
+        )
 
     return 0
 

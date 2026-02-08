@@ -24,6 +24,32 @@ Safe "malicious" sample for demo:
 - Put `eicar.com` into `data/malicious/`
 - When scanning, include `.com` via `--extensions .exe,.dll,.com`
 
+## Demo idea (recommended): Packed vs Clean (NO malware)
+
+If you want a strong demo without real malware, you can train the model to flag **packed/obfuscated binaries** as “suspicious”.
+This demonstrates the “structural analysis” value proposition.
+
+1) Install UPX (packer) and make sure `upx` is available in PATH.
+	- If you don’t want to install system-wide, you can also place `upx.exe` at `tools/upx.exe`.
+
+2) Generate a paired dataset: clean binaries in `data/benign/` and UPX-packed copies in `data/malicious/`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\make_packed_demo.ps1 -Count 50 -Random -Extensions .exe
+```
+
+3) Train:
+
+```powershell
+python train.py --benign-dir data/benign --malicious-dir data/malicious --epochs 5 --batch-size 4 --out malconv_model.pth
+```
+
+4) Scan and present results (Top-N + metadata):
+
+```powershell
+python usb_monitor.py --scan data --checkpoint malconv_model.pth --extensions .exe --top 20 --metadata
+```
+
 ### Quick populate benign samples (Windows)
 
 This copies a subset of Windows binaries into `data/benign` for training/demo.

@@ -94,6 +94,47 @@ def demo_random_training(
 
         print(f"Epoch {epoch + 1}/{epochs} - Loss: {running / steps_per_epoch:.4f}")
 
+try:
+    from sklearn.metrics import confusion_matrix, classification_report
+
+    _SKLEARN_AVAILABLE = True
+except Exception:
+    confusion_matrix = None  # type: ignore[assignment]
+    classification_report = None  # type: ignore[assignment]
+    _SKLEARN_AVAILABLE = False
+
+@torch.no_grad()
+def final_project_report(model: MalConv, loader: DataLoader, device: torch.device) -> None:
+    if not _SKLEARN_AVAILABLE:
+        print("\nFinal report skipped: scikit-learn is not installed.")
+        print("Install it with: pip install scikit-learn")
+        return
+
+    model.eval()
+    all_preds = []
+    all_labels = []
+
+    for x, y, _paths in loader:
+        x = x.to(device)
+        outputs = model(x)
+        preds = (outputs > 0.5).float().cpu().numpy()
+        all_preds.extend(preds.flatten())
+        all_labels.extend(y.cpu().numpy().flatten())
+
+    cm = confusion_matrix(all_labels, all_preds)
+    report = classification_report(all_labels, all_preds, target_names=['Benign', 'Malicious'])
+
+    print("\n" + "!"*40)
+    print("      FINAL CYBERSECURITY REPORT      ")
+    print("!"*40)
+    print(f"\nCONFUSION MATRIX:\n{cm}")
+    print(f"\nDETAILED STATS:\n{report}")
+    
+    if getattr(cm, "size", 0) == 4:
+        tn, fp, fn, tp = cm.ravel()
+        print(f"False Positives (Clean files blocked): {fp}")
+        print(f"False Negatives (Viruses missed):     {fn}")
+    print("!"*40)
 
 def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Train MalConv on folders of binaries")
@@ -117,6 +158,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     print(f"Device: {device}")
 
     model = MalConv(input_length=args.max_len, window_size=args.window_size).to(device)
+
+    test_ds = None
+    test_loader = None
 
     if args.demo_random or (not args.benign_dir and not args.malicious_dir):
         demo_random_training(
@@ -143,30 +187,36 @@ def main(argv: Optional[list[str]] = None) -> int:
         # Simple split
         n = len(dataset)
         idx = torch.randperm(n)
-        split = int(0.9 * n)
-        train_idx = idx[:split].tolist()
-        val_idx = idx[split:].tolist()
+        train_split = int(0.8 * n)
+        val_split = int(0.9 * n) # Marks the 90% point
+
+        train_idx = idx[:train_split].tolist()
+        val_idx = idx[train_split:val_split].tolist()
+        test_idx = idx[val_split:].tolist()
 
         train_ds = torch.utils.data.Subset(dataset, train_idx)
         val_ds = torch.utils.data.Subset(dataset, val_idx)
+        test_ds = torch.utils.data.Subset(dataset, test_idx)
 
+        # Standard loaders for Train and Val
         train_loader = DataLoader(
-            train_ds,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=args.num_workers,
-            pin_memory=torch.cuda.is_available(),
+            train_ds, batch_size=args.batch_size, shuffle=True,
+            num_workers=args.num_workers, pin_memory=torch.cuda.is_available(),
             collate_fn=collate_batch,
         )
         val_loader = DataLoader(
-            val_ds,
-            batch_size=args.batch_size,
-            shuffle=False,
-            num_workers=args.num_workers,
-            pin_memory=torch.cuda.is_available(),
+            val_ds, batch_size=args.batch_size, shuffle=False,
+            num_workers=args.num_workers, pin_memory=torch.cuda.is_available(),
+            collate_fn=collate_batch,
+        )
+        # Loader for the Final Exam (Test Set)
+        test_loader = DataLoader(
+            test_ds, batch_size=args.batch_size, shuffle=False,
+            num_workers=args.num_workers, pin_memory=torch.cuda.is_available(),
             collate_fn=collate_batch,
         )
 
+        print(f"Dataset Split: Train={len(train_ds)} | Val={len(val_ds)} | Test={len(test_ds)}")
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = nn.BCELoss()
 
@@ -185,6 +235,19 @@ def main(argv: Optional[list[str]] = None) -> int:
         args.out,
     )
     print(f"Saved: {os.path.abspath(args.out)}")
+
+    model.eval()
+    print("\nTraining complete.")
+
+    if test_ds is None or test_loader is None:
+        print("Final report skipped: no test split was created (demo-random mode).")
+        return 0
+
+    print("Generating Final Report...", flush=True)
+    if len(test_ds) > 0:
+        final_project_report(model, test_loader, device)
+    else:
+        print("Final report skipped: test dataset is empty. Check your data split logic.")
     return 0
 
 

@@ -6,7 +6,7 @@ Your friend can read this file to see exactly what was created and how to run it
 
 - `model.py` – MalConv (gated CNN) architecture.
 - `preprocess.py` – reads a binary and converts it to a padded tensor (padding index = 256).
-- `dataset.py` – folder dataset loader (`data/benign`, `data/malicious`) + DataLoader collate.
+- `dataset.py` – folder dataset loader (`datasets/local/benign`, `datasets/local/malicious`) + DataLoader collate.
 - `train.py` – training CLI (real folder training or `--demo-random`). Saves `malconv_model.pth`.
 - `usb_monitor.py` – scan a folder OR watch for new drives and scan inserted USBs.
 - `requirements.txt` – torch/numpy/psutil.
@@ -29,19 +29,19 @@ powershell -ExecutionPolicy Bypass -File tools\copy_benign.ps1 -Count 100 -Rando
 Demo-run training (validates code works):
 
 ```powershell
-python train.py --demo-random --epochs 2 --batch-size 2 --out malconv_model.pth
+python -m models.malconv.train --demo-random --epochs 2 --batch-size 2 --out outputs/models/malconv_model.pth
 ```
 
 Scan a folder:
 
 ```powershell
-python usb_monitor.py --scan C:\\Windows\\System32 --checkpoint malconv_model.pth --extensions .exe,.dll,.com --top 20 --metadata
+python -m models.usb_cli.usb_monitor --scan C:\\Windows\\System32 --checkpoint outputs/models/malconv_model.pth --extensions .exe,.dll,.com --top 20 --metadata
 ```
 
 Watch for USB insertion:
 
 ```powershell
-python usb_monitor.py --watch --checkpoint malconv_model.pth --extensions .exe,.dll,.com
+python -m models.usb_cli.usb_monitor --watch --checkpoint outputs/models/malconv_model.pth --extensions .exe,.dll,.com
 ```
 
 ## Demo idea (no malware): Packed vs Clean
@@ -59,13 +59,13 @@ powershell -ExecutionPolicy Bypass -File tools\make_packed_demo.ps1 -Count 50 -R
 3) Train:
 
 ```powershell
-python train.py --benign-dir data/benign --malicious-dir data/malicious --epochs 5 --batch-size 4 --out malconv_model.pth
+python -m models.malconv.train --benign-dir datasets/local/benign --malicious-dir datasets/local/malicious --epochs 5 --batch-size 4 --out outputs/models/malconv_model.pth
 ```
 
 4) Scan:
 
 ```powershell
-python usb_monitor.py --scan data --checkpoint malconv_model.pth --extensions .exe --top 20 --metadata
+python -m models.usb_cli.usb_monitor --scan datasets/local --checkpoint outputs/models/malconv_model.pth --extensions .exe --top 20 --metadata
 ```
 
 ## How your friend can “see what’s happening”

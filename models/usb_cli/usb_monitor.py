@@ -13,8 +13,8 @@ import zipfile
 import psutil
 import torch
 
-from model import MalConv
-from preprocess import file_to_tensor
+from ..malconv.model import MalConv
+from ..malconv.preprocess import file_to_tensor
 
 
 def sha256_file(path: str, chunk_size: int = 1024 * 1024) -> str:
@@ -374,7 +374,7 @@ def watch_usb(model: Optional[MalConv], device: torch.device, threshold: float, 
 
 def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="USB watcher + .exe scanner using MalConv")
-    parser.add_argument("--checkpoint", type=str, default="malconv_model.pth")
+    parser.add_argument("--checkpoint", type=str, default=str(os.path.join("outputs", "models", "malconv_model.pth")))
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--max-len", type=int, default=1048576, help="Used if checkpoint doesn't specify")
     parser.add_argument("--poll", type=int, default=3)
@@ -391,7 +391,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument(
         "--quarantine-dir",
         type=str,
-        default="quarantine",
+        default=str(os.path.join("outputs", "quarantine")),
         help="Where to move files when --action quarantine is used",
     )
     parser.add_argument(

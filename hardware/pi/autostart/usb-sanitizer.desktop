@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=USB Sanitizer Kiosk
+Comment=Fullscreen status UI for USB sanitizer
+Exec=/bin/bash -lc 'cd /home/pi/Ai && if [ -x .venv/bin/python ]; then .venv/bin/python -u hardware/pi/kiosk_ui.py; else python3 -u hardware/pi/kiosk_ui.py; fi'
+Terminal=false
+X-GNOME-Autostart-enabled=true

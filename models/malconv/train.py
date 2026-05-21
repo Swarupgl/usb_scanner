@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import os
 import random
+import re
+from collections import defaultdict
 from typing import Optional
 
 import numpy as np
@@ -10,8 +12,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from dataset import BinaryFolderDataset, collate_batch
-from model import MalConv
+from .dataset import BinaryFolderDataset, BinaryFoldersDataset, collate_batch
+from .model import MalConv
 
 
 def set_seed(seed: int) -> None:
@@ -94,6 +96,62 @@ def demo_random_training(
 
         print(f"Epoch {epoch + 1}/{epochs} - Loss: {running / steps_per_epoch:.4f}")
 
+
+def _base_group_key(path: str) -> str:
+    """Group key used to prevent clean/packed twin leakage.
+
+    Examples:
+      - esentutl.exe -> esentutl
+      - esentutl_packed.exe -> esentutl
+
+    This is intentionally simple and filename-based.
+    """
+    name = os.path.basename(path).lower()
+    name = re.sub(r"\.(exe|dll|com)$", "", name)
+    name = re.sub(r"_packed$", "", name)
+    return name
+
+
+def _group_split_indices(
+    dataset: BinaryFolderDataset,
+    seed: int,
+    train_ratio: float = 0.8,
+    val_ratio: float = 0.1,
+) -> tuple[list[int], list[int], list[int], int]:
+    """Split dataset indices by group key.
+
+    Returns: (train_idx, val_idx, test_idx, num_groups)
+    """
+    groups: dict[str, list[int]] = defaultdict(list)
+    for i, s in enumerate(dataset.samples):
+        groups[_base_group_key(s.path)].append(i)
+
+    group_keys = list(groups.keys())
+    rng = random.Random(seed)
+    rng.shuffle(group_keys)
+
+    g = len(group_keys)
+    g_train = int(train_ratio * g)
+    g_val = int((train_ratio + val_ratio) * g)
+
+    train_keys = set(group_keys[:g_train])
+    val_keys = set(group_keys[g_train:g_val])
+    test_keys = set(group_keys[g_val:])
+
+    train_idx: list[int] = []
+    val_idx: list[int] = []
+    test_idx: list[int] = []
+
+    for k, idxs in groups.items():
+        if k in train_keys:
+            train_idx.extend(idxs)
+        elif k in val_keys:
+            val_idx.extend(idxs)
+        else:
+            test_idx.extend(idxs)
+
+    return train_idx, val_idx, test_idx, g
+
 try:
     from sklearn.metrics import confusion_matrix, classification_report
 
@@ -124,9 +182,9 @@ def final_project_report(model: MalConv, loader: DataLoader, device: torch.devic
     cm = confusion_matrix(all_labels, all_preds)
     report = classification_report(all_labels, all_preds, target_names=['Benign', 'Malicious'])
 
-    print("\n" + "!"*40)
+   
     print("      FINAL CYBERSECURITY REPORT      ")
-    print("!"*40)
+   
     print(f"\nCONFUSION MATRIX:\n{cm}")
     print(f"\nDETAILED STATS:\n{report}")
     
@@ -134,12 +192,24 @@ def final_project_report(model: MalConv, loader: DataLoader, device: torch.devic
         tn, fp, fn, tp = cm.ravel()
         print(f"False Positives (Clean files blocked): {fp}")
         print(f"False Negatives (Viruses missed):     {fn}")
-    print("!"*40)
+    
 
 def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Train MalConv on folders of binaries")
     parser.add_argument("--benign-dir", type=str, default=None, help="Folder of benign .exe/.dll")
     parser.add_argument("--malicious-dir", type=str, default=None, help="Folder of malicious/test samples")
+    parser.add_argument(
+        "--benign-dirs",
+        nargs="+",
+        default=None,
+        help="One or more benign folders (overrides --benign-dir when set)",
+    )
+    parser.add_argument(
+        "--malicious-dirs",
+        nargs="+",
+        default=None,
+        help="One or more malicious folders (overrides --malicious-dir when set)",
+    )
     parser.add_argument("--max-len", type=int, default=1048576, help="Bytes per file (default 1MB)")
     parser.add_argument("--window-size", type=int, default=512)
     parser.add_argument("--epochs", type=int, default=5)
@@ -148,8 +218,31 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--num-workers", type=int, default=0, help="Keep 0 on Windows initially")
     parser.add_argument("--limit-per-class", type=int, default=200, help="Cap files per class")
     parser.add_argument("--seed", type=int, default=1337)
-    parser.add_argument("--out", type=str, default="malconv_model.pth")
+    parser.add_argument("--out", type=str, default=str(os.path.join("outputs", "models", "malconv_model.pth")))
     parser.add_argument("--demo-random", action="store_true", help="Train on random bytes/labels")
+    parser.add_argument(
+        "--augment-pad-bytes",
+        type=int,
+        default=0,
+        help="Training-time robustness augmentation: append up to N bytes when file is shorter than max_len",
+    )
+    parser.add_argument(
+        "--augment-mode",
+        choices=["none", "zeros", "random"],
+        default="none",
+        help="Augmentation bytes type (used with --augment-pad-bytes)",
+    )
+    parser.add_argument(
+        "--augment-prob",
+        type=float,
+        default=0.0,
+        help="Probability to apply augmentation per sample (0.0 disables)",
+    )
+    parser.add_argument(
+        "--no-group-split",
+        action="store_true",
+        help="Use the old random per-file split (NOT recommended for packed-vs-clean paired datasets)",
+    )
     args = parser.parse_args(argv)
 
     set_seed(args.seed)
@@ -174,25 +267,44 @@ def main(argv: Optional[list[str]] = None) -> int:
         )
     else:
         if not args.benign_dir or not args.malicious_dir:
-            print("Error: provide both --benign-dir and --malicious-dir (or use --demo-random).")
-            return 2
+            if not args.benign_dirs or not args.malicious_dirs:
+                print(
+                    "Error: provide both benign and malicious data (use --benign-dir/--malicious-dir or --benign-dirs/--malicious-dirs)."
+                )
+                return 2
 
-        dataset = BinaryFolderDataset(
-            benign_dir=args.benign_dir,
-            malicious_dir=args.malicious_dir,
-            max_len=args.max_len,
-            limit_per_class=args.limit_per_class,
+        benign_dirs = args.benign_dirs if args.benign_dirs else ([args.benign_dir] if args.benign_dir else [])
+        malicious_dirs = (
+            args.malicious_dirs if args.malicious_dirs else ([args.malicious_dir] if args.malicious_dir else [])
         )
 
-        # Simple split
-        n = len(dataset)
-        idx = torch.randperm(n)
-        train_split = int(0.8 * n)
-        val_split = int(0.9 * n) # Marks the 90% point
+        dataset = BinaryFoldersDataset(
+            benign_dirs=benign_dirs,
+            malicious_dirs=malicious_dirs,
+            max_len=args.max_len,
+            limit_per_class=args.limit_per_class,
+            noise_bytes=args.augment_pad_bytes,
+            noise_mode=args.augment_mode,
+            noise_prob=args.augment_prob,
+            noise_seed=args.seed,
+        )
 
-        train_idx = idx[:train_split].tolist()
-        val_idx = idx[train_split:val_split].tolist()
-        test_idx = idx[val_split:].tolist()
+        if args.no_group_split:
+            # Old behavior: random per-file split (can leak paired variants across splits)
+            n = len(dataset)
+            idx = torch.randperm(n)
+            train_split = int(0.8 * n)
+            val_split = int(0.9 * n)
+
+            train_idx = idx[:train_split].tolist()
+            val_idx = idx[train_split:val_split].tolist()
+            test_idx = idx[val_split:].tolist()
+            num_groups = None
+            split_mode = "random-file"
+        else:
+            # Safer default: group split by base filename (prevents clean/packed twin leakage)
+            train_idx, val_idx, test_idx, num_groups = _group_split_indices(dataset, seed=args.seed)
+            split_mode = "group-by-basename"
 
         train_ds = torch.utils.data.Subset(dataset, train_idx)
         val_ds = torch.utils.data.Subset(dataset, val_idx)
@@ -216,7 +328,12 @@ def main(argv: Optional[list[str]] = None) -> int:
             collate_fn=collate_batch,
         )
 
-        print(f"Dataset Split: Train={len(train_ds)} | Val={len(val_ds)} | Test={len(test_ds)}")
+        if num_groups is None:
+            print(f"Dataset Split ({split_mode}): Train={len(train_ds)} | Val={len(val_ds)} | Test={len(test_ds)}")
+        else:
+            print(
+                f"Dataset Split ({split_mode}): Train={len(train_ds)} | Val={len(val_ds)} | Test={len(test_ds)} | Groups={num_groups}"
+            )
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = nn.BCELoss()
 

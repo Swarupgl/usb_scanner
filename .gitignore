@@ -1,18 +1,45 @@
+# ── Python cache ─────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
-*.pth
-*.pt
+*.pyd
+
+# ── Virtual environment ───────────────────────────────────────────────────────
 .venv/
 venv/
+env/
 .env
+
+# ── Model checkpoints & weights (large binary files, not for git) ────────────
+# Keep only the canonical best checkpoint via Git LFS or exclude entirely.
+*.pth
+*.pt
+*.onnx
+
+# ── Dataset binaries (executables must never be committed) ───────────────────
+datasets/local/
+datasets/external/
+datasets/extractors/
+
+# ── Outputs – quarantine folders and demo artifacts ──────────────────────────
+outputs/quarantine*/
+outputs/demo/
+outputs/fusion/
+outputs/pi/
+
+# ── IDE / OS noise ────────────────────────────────────────────────────────────
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
 
-# Local datasets (do not commit)
-data/**
-!data/**/.gitkeep
+# ── Course PDF (too large, proprietary) ──────────────────────────────────────
+EAI.pdf
 
-# Local demo artifacts (do not commit binaries)
-demo_pack/
-demo_pack.zip
-demo_pack.sanitized.zip
+# ── Temp / scratch ────────────────────────────────────────────────────────────
+*.tmp
+*.log
+tmp/
+scratch/

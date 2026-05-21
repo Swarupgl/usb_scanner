@@ -1,0 +1,11 @@
+# Trigger a scan as soon as a USB mass-storage *partition* appears.
+# Starts: usb-sanitize@<kernelname>.service
+# Example: /dev/sda1 -> usb-sanitize@sda1.service
+
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_BUS}=="usb", ENV{DEVTYPE}=="partition", KERNEL=="sd*[0-9]", TAG+="systemd", ENV{SYSTEMD_WANTS}+="usb-sanitize@%k.service"
+
+# Some USB sticks / SD readers present the filesystem directly on the whole disk
+# node ("superfloppy"), so you get /dev/sdb (with exfat/vfat) but no /dev/sdb1.
+# In that case, trigger on the *disk* node only if udev already detected a
+# filesystem type on it.
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_BUS}=="usb", ENV{DEVTYPE}=="disk", KERNEL=="sd*", ENV{ID_FS_TYPE}!="", TAG+="systemd", ENV{SYSTEMD_WANTS}+="usb-sanitize@%k.service"

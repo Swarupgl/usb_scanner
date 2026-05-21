@@ -1,8 +1,8 @@
 param(
     [string]$SourceDir = "C:\\Windows\\System32",
     [int]$Count = 50,
-    [string]$OutBenign = "data\\benign",
-    [string]$OutPacked = "data\\malicious",
+    [string]$OutBenign = "datasets\\local\\benign",
+    [string]$OutPacked = "datasets\\local\\malicious",
     [string[]]$Extensions = @(".exe"),
     [switch]$Random
 )

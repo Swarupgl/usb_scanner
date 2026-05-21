@@ -1,0 +1,8 @@
+# Raspberry Pi runtime dependencies for the sanitizer pipeline
+# Keep these separate from requirements.txt (Windows training env) because yara-python can be OS-specific.
+
+numpy
+requests
+pefile
+onnxruntime
+yara-python

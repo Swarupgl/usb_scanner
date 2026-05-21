@@ -1,0 +1,21 @@
+[Unit]
+Description=USB Sanitizer Kiosk (Xorg on /dev/fb1)
+After=network-online.target
+Wants=network-online.target
+
+# If fb1 is missing, the TFT overlay isn't loaded; fail fast.
+ConditionPathExists=/dev/fb1
+
+[Service]
+Type=simple
+
+User=root
+WorkingDirectory=/home/pi/Ai
+
+ExecStart=/usr/bin/openvt -f -c 2 -- /bin/bash /home/pi/Ai/hardware/pi/kiosk_fb1_run.sh
+
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

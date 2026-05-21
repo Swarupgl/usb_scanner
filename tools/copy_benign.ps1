@@ -1,6 +1,6 @@
 param(
   [int]$Count = 100,
-  [string]$OutDir = "..\data\benign",
+  [string]$OutDir = "..\datasets\local\benign",
   [string[]]$SourceDirs = @("C:\Windows\System32"),
   [string[]]$Extensions = @(".exe", ".dll"),
   [switch]$Random
@@ -85,4 +85,5 @@ Write-Host "  Output:  $dest"
 
 Write-Host "" 
 Write-Host "Next: train with:" -ForegroundColor Yellow
-Write-Host "  python train.py --benign-dir data\benign --malicious-dir data\malicious --epochs 5 --batch-size 2 --out malconv_model.pth"
+Write-Host "  python -m models.malconv.train --benign-dir datasets\local\benign --malicious-dir datasets\local\malicious --epochs 5 --batch-size 2 --out outputs\models\malconv_model.pth"
+

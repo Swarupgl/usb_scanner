@@ -1,0 +1,5 @@
+# Ensure classic console VT permissions so rootless Xorg can open VTs.
+# Some Pi OS/Debian images can end up with /dev/ttyN as root:root 0600,
+# which breaks Xorg with: xf86OpenConsole: Cannot open virtual console N (Permission denied)
+
+SUBSYSTEM=="tty", KERNEL=="tty[0-9]*", GROUP="tty", MODE="0620"

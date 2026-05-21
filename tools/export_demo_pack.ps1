@@ -1,6 +1,6 @@
 param(
-    [string]$BenignDir = "data\\benign",
-    [string]$PackedDir = "data\\malicious",
+    [string]$BenignDir = "datasets\\local\\benign",
+    [string]$PackedDir = "datasets\\local\\malicious",
     [string]$Checkpoint = "malconv_model.pth",
     [string]$OutDir = "demo_pack",
     [int]$Pairs = 10,
@@ -59,9 +59,9 @@ Friend laptop steps:
 1) git clone https://github.com/Swarupgl/usb_scanner.git
 2) cd usb_scanner
 3) pip install -r requirements.txt
-4) Copy malconv_model.pth from this folder into the repo folder
+4) Copy malconv_model.pth from this folder into outputs\models\malconv_model.pth
 5) Run scan:
-   python usb_monitor.py --scan <this_demo_pack_path> --checkpoint malconv_model.pth --extensions .exe --top 20 --metadata
+    python -m models.usb_cli.usb_monitor --scan <this_demo_pack_path> --checkpoint outputs\models\malconv_model.pth --extensions .exe --top 20 --metadata
 
 Expected:
 - clean\\ files score low

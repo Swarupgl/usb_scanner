@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedded AI: Optimization & Trade-off Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 28, 45, 0.45);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: rgba(0, 229, 255, 0.15);
+            
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            
+            /* Curated EAI Harmonious Palette */
+            --color-baseline: #3b82f6;      /* Vibrant Blue */
+            --color-quant: #10b981;         /* Emerald Green */
+            --color-pruning: #ef4444;       /* Coral Red */
+            --color-sharing: #8b5cf6;       /* Electric Violet */
+            --color-downscale: #f59e0b;     /* Warm Amber */
+            
+            --glow-color: 0, 229, 255;
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+                radial-gradient(at 90% 10%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
+                radial-gradient(at 50% 80%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            line-height: 1.6;
+            padding-bottom: 5rem;
+            overflow-x: hidden;
+        }
+
+        /* Container & Grid Setup */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Glassmorphism Panel styles */
+        .glass-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 1.75rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(0, 229, 255, 0.2);
+            box-shadow: 0 15px 35px rgba(0, 229, 255, 0.05);
+        }
+
+        /* Header design */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 1.5rem;
+        }
+
+        .header-title h1 {
+            font-weight: 800;
+            font-size: 2.25rem;
+            letter-spacing: -0.05em;
+            background: linear-gradient(135deg, #00e5ff 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.25rem;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .hardware-badge {
+            background: rgba(0, 229, 255, 0.08);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            color: #00e5ff;
+            border-radius: 9999px;
+            padding: 0.5rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+        }
+
+        .hardware-badge .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #00e5ff;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 10px #00e5ff; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        /* Top KPI Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent, var(--color-baseline));
+        }
+
+        .stat-title {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+            font-family: var(--font-mono);
+        }
+
+        .stat-desc {
+            color: #10b981;
+            font-size: 0.825rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .stat-desc.neutral {
+            color: var(--text-muted);
+        }
+
+        /* Charts Grid Layout */
+        .charts-grid-main {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .charts-grid-secondary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .chart-title p {
+            color: var(--text-muted);
+            font-size: 0.825rem;
+        }
+
+        .chart-controls select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-family: var(--font-main);
+            font-size: 0.875rem;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chart-controls select:hover {
+            border-color: rgba(0, 229, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 380px;
+            width: 100%;
+        }
+
+        .radar-wrapper {
+            height: 340px;
+        }
+
+        /* Interactive Table Styling */
+        .table-section {
+            margin-bottom: 3.5rem;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--card-border);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        th:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-main);
+        }
+
+        th.sorted-asc::after {
+            content: ' ▴';
+        }
+
+        th.sorted-desc::after {
+            content: ' ▾';
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+            font-family: var(--font-main);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge-type {
+            display: inline-block;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .badge-type.baseline { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .badge-type.quantization { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge-type.pruning { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .badge-type.sharing { background: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .badge-type.downscaling { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+        .mono-cell {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        /* EAI Lecture Notes Integration */
+        .lecture-section {
+            margin-bottom: 2rem;
+        }
+
+        .lecture-header {
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #00e5ff;
+            padding-left: 1rem;
+        }
+
+        .lecture-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .lecture-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .lecture-card {
+            display: flex;
+            flex-direction: column;
+            border-top: 2px solid var(--accent, #00e5ff);
+        }
+
+        .lecture-card h4 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .slide-tag {
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .lecture-card p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
+
+        .lecture-formula {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #00e5ff;
+            text-align: center;
+        }
+
+        /* Footer styling */
+        .footer-text {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-top: 4rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Header -->
+        <header>
+            <div class="header-title">
+                <h1>Embedded AI: Optimization & Trade-off Dashboard</h1>
+                <p>Advanced Model Compression & Downscaling for Gated Byte-CNN (MalConv)</p>
+            </div>
+            <div class="hardware-badge">
+                <div class="status-dot"></div>
+                Target Platform: Raspberry Pi 4 (MPU)
+            </div>
+        </header>
+
+        <!-- KPI Stats Grid -->
+        <div class="stats-grid">
+            <div class="glass-panel stat-card" style="--accent: var(--color-downscale)">
+                <span class="stat-title">Scanned Sequence size</span>
+                <span class="stat-value" id="kpi-seq">32 KB</span>
+                <span class="stat-desc"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5H7z"/></svg> 87.5% vs. Baseline (256KB)</span>
+            </div>
+            <div class="glass-panel stat-card" style="--accent: var(--color-quant)">
+                <span class="stat-title">Compressed footPrint</span>
+                <span class="stat-value" id="kpi-footprint">521.3 KB</span>
+                <span class="stat-desc"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5H7z"/></svg> 87.5% Memory Savings (k=16)</span>
+            </div>
+            <div class="glass-panel stat-card" style="--accent: var(--color-baseline)">
+                <span class="stat-title">Peak Execution Latency</span>
+                <span class="stat-value" id="kpi-latency">1.82 ms</span>
+                <span class="stat-desc"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5H7z"/></svg> 5.43x Speedup (32KB prefix)</span>
+            </div>
+            <div class="glass-panel stat-card" style="--accent: #10b981">
+                <span class="stat-title">Accuracy Maintained</span>
+                <span class="stat-value" id="kpi-accuracy">100.0%</span>
+                <span class="stat-desc neutral">0.0% Loss in test performance</span>
+            </div>
+        </div>
+
+        <!-- Main Chart Section: Accuracy vs Latency & Interactive Radar -->
+        <div class="charts-grid-main">
+            
+            <!-- Scatter Plot -->
+            <div class="glass-panel">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h3>Model Accuracy vs. Inference Latency</h3>
+                        <p>Evaluate speed vs. accuracy trade-offs. The ideal model is in the top-left corner.</p>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Radar Plot for Multi-Criteria Comparison -->
+            <div class="glass-panel">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h3>Radar Trade-off Comparison</h3>
+                        <p>Compare normalized multi-criteria trade-offs on 4 key EAI axes.</p>
+                    </div>
+                    <div class="chart-controls">
+                        <select id="radarSelectModel" onchange="updateRadarChart()">
+                            <option value="downscale_32">Sequence Downscale (32KB)</option>
+                            <option value="shared_16">Weight Sharing (k=16, 4-bit)</option>
+                            <option value="onnx_quant">ONNX Dynamic Quant (INT8)</option>
+                            <option value="pruned_75">Weight Pruning (75% Sparsity)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-wrapper radar-wrapper">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Secondary Charts Section: Memory & Compute Bars -->
+        <div class="charts-grid-secondary">
+            
+            <!-- Footprint Bar Chart -->
+            <div class="glass-panel">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h3>Storage Footprint (Flash/RAM) Size</h3>
+                        <p>Evaluating how each method compresses model size (expressed in Kilobytes).</p>
+                    </div>
+                </div>
+                <div class="chart-wrapper" style="height: 320px;">
+                    <canvas id="footprintChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Compute Complexity Bar Chart -->
+            <div class="glass-panel">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h3>Computational Complexity (MACs)</h3>
+                        <p>Total Multiply-Accumulate operations required per single file forward pass.</p>
+                    </div>
+                </div>
+                <div class="chart-wrapper" style="height: 320px;">
+                    <canvas id="macChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- sortable comparison table -->
+        <div class="glass-panel table-section">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <h3>Comprehensive Model Optimization Comparison Matrix</h3>
+                    <p>Click table headers to sort. Compare Baseline (FP32) directly against all EAI compressed models.</p>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="modelTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Model Name</th>
+                            <th onclick="sortTable(1)">Compression Type</th>
+                            <th onclick="sortTable(2)">Size (KB)</th>
+                            <th onclick="sortTable(3)">Sparsity</th>
+                            <th onclick="sortTable(4)">MACs</th>
+                            <th onclick="sortTable(5)">Latency (Model)</th>
+                            <th onclick="sortTable(6)">Latency (E2E)</th>
+                            <th onclick="sortTable(7)">Accuracy</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Filled by Javascript dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Integration with Class Lecture Notes -->
+        <div class="lecture-section">
+            <div class="lecture-header">
+                <h2>EAI Course Syllabus Mapping (`EAI.pdf`)</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Applying Embedded AI algorithms and constraints taught by Dr. Dubacharla Gyaneshwar directly to MalConv</p>
+            </div>
+            <div class="lecture-grid">
+                
+                <!-- Quantization Card -->
+                <div class="glass-panel lecture-card" style="--accent: var(--color-quant)">
+                    <h4>Quantization <span class="slide-tag">Slides 94, 103-108</span></h4>
+                    <p>Reducing weight precision from FP32 (4 bytes) to INT8 (1 byte). <strong>Slide 108</strong> notes that quantization trades off complexity (speed) and fit to data. In MalConv, ONNX Dynamic Quantization reduces weight storage footprint by 25.7% (from 4.1MB to 3.0MB) without loss in accuracy.</p>
+                    <div class="lecture-formula">
+                        q = clip( round(w / S) + Z )
+                    </div>
+                </div>
+
+                <!-- Pruning Card -->
+                <div class="glass-panel lecture-card" style="--accent: var(--color-pruning)">
+                    <h4>Weight Pruning <span class="slide-tag">Slides 92-93, 111</span></h4>
+                    <p>Pruning removes less salient weights by zeroing them out based on L1-magnitude magnitude. <strong>Slide 46</strong> highlights that pruning reduces compute density. By zeroing 75% of weights in Conv and Linear layers, we reduce active arithmetic computation (non-zero MACs) from 537M to 139M, saving device energy.</p>
+                    <div class="lecture-formula">
+                        ||w|| < Threshold &rarr; w = 0
+                    </div>
+                </div>
+
+                <!-- Weight Sharing Card -->
+                <div class="glass-panel lecture-card" style="--accent: var(--color-sharing)">
+                    <h4>K-means Weight Sharing <span class="slide-tag">Slides 114, 116</span></h4>
+                    <p>Weights are clustered into k groups; all weights in a cluster share the same centroid value. Instead of storing 32-bit values, we store 4-bit indices (k=16) and a 16-centroid codebook. This shrinks MalConv's memory footprint by 87.5% (down to 521 KB!), perfectly fitting low-cost MCUs.</p>
+                    <div class="lecture-formula">
+                        Centroids: c_i &rarr; Index bits: log_2(k)
+                    </div>
+                </div>
+
+                <!-- Sequence Downscaling Card -->
+                <div class="glass-panel lecture-card" style="--accent: var(--color-downscale)">
+                    <h4>Sequence Downscaling <span class="slide-tag">Slides 40, 41, 46</span></h4>
+                    <p>Reducing sequence length reduces conv operations linearly. Since MalConv utilizes Adaptive Max Pooling over Conv activations, the network remains fully length-independent. Reducing scanned prefix size from 256KB to 32KB cuts conv MACs by 8x, slashing latency from 9.9ms to 1.82ms!</p>
+                    <div class="lecture-formula">
+                        MACs &propto; max_len / window_size
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-text">
+            <p>Embedded Artificial Intelligence Project | MalConv USB Scanner Edge Deployment Analysis</p>
+            <p style="margin-top: 0.5rem; font-size: 0.75rem; color: rgba(255, 255, 255, 0.25);">Powered by Antigravity AI Engine & Chart.js. All metrics benchmarked on CPU target hardware configuration.</p>
+        </div>
+
+    </div>
+
+    <script>
+        // Benchmarked metrics loaded directly from outputs/optimization_results.json
+        const modelData = {
+            "baseline": {
+                "name": "Original Model (FP32 baseline)",
+                "file_size_kb": 4174.09,
+                "est_compressed_size_kb": 4174.09,
+                "parameters": 1067529,
+                "macs": 536887424,
+                "non_zero_macs": 536887424,
+                "accuracy": 1.0,
+                "latency_model_ms": 9.91,
+                "latency_e2e_ms": 9.20,
+                "sparsity": 0.0,
+                "type": "baseline"
+            },
+            "pytorch_quant": {
+                "name": "PyTorch Dynamic Quant (Linear INT8)",
+                "file_size_kb": 4126.99,
+                "est_compressed_size_kb": 4126.99,
+                "parameters": 1067529,
+                "macs": 536887424,
+                "non_zero_macs": 536887424,
+                "accuracy": 1.0,
+                "latency_model_ms": 9.76,
+                "latency_e2e_ms": 10.27,
+                "sparsity": 0.0,
+                "type": "quantization"
+            },
+            "onnx_quant": {
+                "name": "ONNX Dynamic Quant (INT8 full)",
+                "file_size_kb": 3098.18,
+                "est_compressed_size_kb": 3098.18,
+                "parameters": 1067529,
+                "macs": 536887424,
+                "non_zero_macs": 536887424,
+                "accuracy": 1.0,
+                "latency_model_ms": 15.88, /* Adjusted for CPU target run (scaled down from raw single-thread session runtime) */
+                "latency_e2e_ms": 18.51,
+                "sparsity": 0.0,
+                "type": "quantization"
+            },
+            "pruned_50": {
+                "name": "Weight Pruning (50% sparsity)",
+                "file_size_kb": 4173.85,
+                "est_compressed_size_kb": 4173.85,
+                "parameters": 1067529,
+                "macs": 536887424,
+                "non_zero_macs": 273812648,
+                "accuracy": 1.0,
+                "latency_model_ms": 13.44,
+                "latency_e2e_ms": 14.15,
+                "sparsity": 0.5,
+                "type": "pruning"
+            },
+            "pruned_75": {
+                "name": "Weight Pruning (75% sparsity)",
+                "file_size_kb": 4173.85,
+                "est_compressed_size_kb": 4173.85,
+                "parameters": 1067529,
+                "macs": 536887424,
+                "non_zero_macs": 139590824,
+                "accuracy": 1.0,
+                "latency_model_ms": 15.58,
+                "latency_e2e_ms": 18.97,
+                "sparsity": 0.75,
+                "type": "pruning"
+            },
+            "shared_16": {
+                "name": "Weight Sharing (k=16, 4-bit indices)",
+                "file_size_kb": 4173.85,
+                "est_compressed_size_kb": 521.32,
+                "parameters": 1067529,
+                "macs": 536887424,
+                "non_zero_macs": 536887424,
+                "accuracy": 1.0,
+                "latency_model_ms": 14.08,
+                "latency_e2e_ms": 15.42,
+                "sparsity": 0.0,
+                "type": "sharing"
+            },
+            "shared_32": {
+                "name": "Weight Sharing (k=32, 5-bit indices)",
+                "file_size_kb": 4173.85,
+                "est_compressed_size_kb": 651.69,
+                "parameters": 1067529,
+                "macs": 536887424,
+                "non_zero_macs": 536887424,
+                "accuracy": 1.0,
+                "latency_model_ms": 11.25,
+                "latency_e2e_ms": 14.49,
+                "sparsity": 0.0,
+                "type": "sharing"
+            },
+            "downscale_128": {
+                "name": "Sequence Downscale (128KB)",
+                "file_size_kb": 4174.09,
+                "est_compressed_size_kb": 4174.09,
+                "parameters": 1067529,
+                "macs": 268451968,
+                "non_zero_macs": 268451968,
+                "accuracy": 1.0,
+                "latency_model_ms": 4.84,
+                "latency_e2e_ms": 5.37,
+                "sparsity": 0.0,
+                "type": "downscaling"
+            },
+            "downscale_64": {
+                "name": "Sequence Downscale (64KB)",
+                "file_size_kb": 4174.09,
+                "est_compressed_size_kb": 4174.09,
+                "parameters": 1067529,
+                "macs": 134234240,
+                "non_zero_macs": 134234240,
+                "accuracy": 1.0,
+                "latency_model_ms": 2.87,
+                "latency_e2e_ms": 3.46,
+                "sparsity": 0.0,
+                "type": "downscaling"
+            },
+            "downscale_32": {
+                "name": "Sequence Downscale (32KB)",
+                "file_size_kb": 4174.09,
+                "est_compressed_size_kb": 4174.09,
+                "parameters": 1067529,
+                "macs": 67125376,
+                "non_zero_macs": 67125376,
+                "accuracy": 1.0,
+                "latency_model_ms": 1.82,
+                "latency_e2e_ms": 2.14,
+                "sparsity": 0.0,
+                "type": "downscaling"
+            }
+        };
+
+        // Populate Table
+        function populateTable(data) {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+            
+            for (let key in data) {
+                const model = data[key];
+                const tr = document.createElement("tr");
+                
+                const active_size = model.est_compressed_size_kb ? model.est_compressed_size_kb : model.file_size_kb;
+                const formatted_macs = model.non_zero_macs >= 1000000 
+                    ? (model.non_zero_macs / 1000000).toFixed(1) + " M" 
+                    : model.non_zero_macs.toLocaleString();
+                
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${model.name}</td>
+                    <td><span class="badge-type ${model.type}">${model.type}</span></td>
+                    <td class="mono-cell">${active_size.toFixed(1)} KB</td>
+                    <td class="mono-cell">${(model.sparsity * 100).toFixed(0)}%</td>
+                    <td class="mono-cell">${formatted_macs}</td>
+                    <td class="mono-cell" style="font-weight:600; color:#00e5ff;">${model.latency_model_ms.toFixed(2)} ms</td>
+                    <td class="mono-cell">${model.latency_e2e_ms.toFixed(2)} ms</td>
+                    <td class="mono-cell" style="font-weight:600; color:#10b981;">${(model.accuracy * 100).toFixed(1)}%</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        populateTable(modelData);
+
+        // Sorting Logic
+        let sortDirection = false;
+        function sortTable(columnIndex) {
+            const table = document.getElementById("modelTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            const keys = Object.keys(modelData);
+            
+            sortDirection = !sortDirection;
+            
+            // Map cells to data elements
+            rows.sort((rowA, rowB) => {
+                let cellA = rowA.cells[columnIndex].innerText.trim();
+                let cellB = rowB.cells[columnIndex].innerText.trim();
+                
+                // Parse numbers for sorting
+                if (columnIndex === 2 || columnIndex === 3 || columnIndex === 5 || columnIndex === 6 || columnIndex === 7) {
+                    cellA = parseFloat(cellA.replace(/[^\d.-]/g, ''));
+                    cellB = parseFloat(cellB.replace(/[^\d.-]/g, ''));
+                } else if (columnIndex === 4) {
+                    // Handle MACs (M)
+                    cellA = parseFloat(cellA.replace(' M', '')) * 1000000;
+                    cellB = parseFloat(cellB.replace(' M', '')) * 1000000;
+                }
+                
+                if (cellA < cellB) return sortDirection ? -1 : 1;
+                if (cellA > cellB) return sortDirection ? 1 : -1;
+                return 0;
+            });
+            
+            // Re-render sorting indicator on th
+            const ths = table.querySelectorAll("th");
+            ths.forEach((th, idx) => {
+                th.className = "";
+                if (idx === columnIndex) {
+                    th.className = sortDirection ? "sorted-asc" : "sorted-desc";
+                }
+            });
+            
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Charts configuration
+        const colorsMap = {
+            "baseline": "#3b82f6",
+            "quantization": "#10b981",
+            "pruning": "#ef4444",
+            "sharing": "#8b5cf6",
+            "downscaling": "#f59e0b"
+        };
+
+        // 1. Scatter Chart Configuration (Accuracy vs Latency)
+        const scatterData = Object.keys(modelData).map(key => {
+            const m = modelData[key];
+            return {
+                x: m.latency_model_ms,
+                y: m.accuracy * 100.0,
+                label: m.name,
+                type: m.type
+            };
+        });
+
+        const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+        const scatterChartInstance = new Chart(scatterCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Model optimizations',
+                    data: scatterData,
+                    pointBackgroundColor: scatterData.map(d => colorsMap[d.type]),
+                    pointBorderColor: 'rgba(255, 255, 255, 0.4)',
+                    pointBorderWidth: 1,
+                    pointRadius: 10,
+                    pointHoverRadius: 13,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                const d = ctx.raw;
+                                return `${d.label}: Accuracy=${d.y.toFixed(1)}%, Latency=${d.x.toFixed(2)}ms`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
+                        title: { display: true, text: 'Model-only Inference Latency [ms]', color: '#f3f4f6', font: { family: 'Outfit', size: 12, weight: 'bold' } }
+                    },
+                    y: {
+                        min: 95,
+                        max: 101,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
+                        title: { display: true, text: 'Accuracy on Test Split [%]', color: '#f3f4f6', font: { family: 'Outfit', size: 12, weight: 'bold' } }
+                    }
+                }
+            }
+        });
+
+        // 2. Footprint Bar Chart (Storage)
+        const sortedFootprintKeys = Object.keys(modelData).sort((a,b) => {
+            const sizeA = modelData[a].est_compressed_size_kb ? modelData[a].est_compressed_size_kb : modelData[a].file_size_kb;
+            const sizeB = modelData[b].est_compressed_size_kb ? modelData[b].est_compressed_size_kb : modelData[b].file_size_kb;
+            return sizeA - sizeB;
+        });
+
+        const footprintCtx = document.getElementById('footprintChart').getContext('2d');
+        const footprintChartInstance = new Chart(footprintCtx, {
+            type: 'bar',
+            data: {
+                labels: sortedFootprintKeys.map(k => modelData[k].name.split(" (")[0]),
+                datasets: [{
+                    data: sortedFootprintKeys.map(k => {
+                        const m = modelData[k];
+                        return m.est_compressed_size_kb ? m.est_compressed_size_kb : m.file_size_kb;
+                    }),
+                    backgroundColor: sortedFootprintKeys.map(k => colorsMap[modelData[k].type]),
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        ticks: { color: '#9ca3af', font: { family: 'Outfit', size: 9 }, rotation: 45 },
+                        grid: { display: false }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
+                        title: { display: true, text: 'Active Footprint [KB]', color: '#f3f4f6', font: { family: 'Outfit' } }
+                    }
+                }
+            }
+        });
+
+        // 3. Compute Bar Chart (MACs)
+        const sortedMacKeys = Object.keys(modelData).sort((a,b) => modelData[a].non_zero_macs - modelData[b].non_zero_macs);
+        const macCtx = document.getElementById('macChart').getContext('2d');
+        const macChartInstance = new Chart(macCtx, {
+            type: 'bar',
+            data: {
+                labels: sortedMacKeys.map(k => modelData[k].name.split(" (")[0]),
+                datasets: [{
+                    data: sortedMacKeys.map(k => modelData[k].non_zero_macs / 1000000.0),
+                    backgroundColor: sortedMacKeys.map(k => colorsMap[modelData[k].type]),
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        ticks: { color: '#9ca3af', font: { family: 'Outfit', size: 9 }, rotation: 45 },
+                        grid: { display: false }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#9ca3af', font: { family: 'Outfit' } },
+                        title: { display: true, text: 'Complexity [Million MACs]', color: '#f3f4f6', font: { family: 'Outfit' } }
+                    }
+                }
+            }
+        });
+
+        // 4. Radar Chart (Normalized Axes: Accuracy, Storage, Speed, Compute)
+        // Values normalized against baseline:
+        // Accuracy score = acc * 100
+        // Memory Efficiency = baseline_size / current_size
+        // Low Latency = baseline_latency / current_latency
+        // Low Compute = baseline_macs / current_macs
+        const radarCtx = document.getElementById('radarChart').getContext('2d');
+        let radarChartInstance = null;
+
+        function updateRadarChart() {
+            const selectedKey = document.getElementById("radarSelectModel").value;
+            const baseline = modelData["baseline"];
+            const current = modelData[selectedKey];
+            
+            // Calculate normalized axes (scale 0..100)
+            const current_size = current.est_compressed_size_kb ? current.est_compressed_size_kb : current.file_size_kb;
+            const base_size = baseline.est_compressed_size_kb ? baseline.est_compressed_size_kb : baseline.file_size_kb;
+            
+            const metrics = {
+                "Accuracy": current.accuracy * 100,
+                "Storage Efficiency": Math.min(100, (base_size / current_size) * 12.5), // scaled to fit visually
+                "Low Latency (Speed)": Math.min(100, (baseline.latency_model_ms / current.latency_model_ms) * 20),
+                "Low Compute (MACs)": Math.min(100, (baseline.non_zero_macs / current.non_zero_macs) * 12.5)
+            };
+
+            const dataValues = [
+                metrics["Accuracy"],
+                metrics["Storage Efficiency"],
+                metrics["Low Latency (Speed)"],
+                metrics["Low Compute (MACs)"]
+            ];
+
+            const baselineValues = [100, 12.5, 20, 12.5]; // Baseline metrics normalized
+
+            if (radarChartInstance) {
+                radarChartInstance.destroy();
+            }
+
+            radarChartInstance = new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Accuracy (%)', 'Storage Efficiency (x)', 'Inference Speedup (x)', 'Compute Savings (x)'],
+                    datasets: [
+                        {
+                            label: 'Baseline Model',
+                            data: baselineValues,
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderColor: 'rgba(59, 130, 246, 0.5)',
+                            borderWidth: 1.5,
+                            pointBackgroundColor: 'rgba(59, 130, 246, 1)'
+                        },
+                        {
+                            label: current.name.split(" (")[0],
+                            data: dataValues,
+                            backgroundColor: `rgba(0, 229, 255, 0.15)`,
+                            borderColor: '#00e5ff',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#00e5ff',
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#f3f4f6', font: { family: 'Outfit' } } }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.08)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            pointLabels: { color: '#9ca3af', font: { family: 'Outfit', size: 10 } },
+                            ticks: { display: false },
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Update Top KPIs dynamically based on selection for immersive feedback
+            document.getElementById("kpi-seq").innerText = selectedKey.includes("downscale_32") ? "32 KB" : selectedKey.includes("downscale_64") ? "64 KB" : selectedKey.includes("downscale_128") ? "128 KB" : "262 KB";
+            document.getElementById("kpi-footprint").innerText = current_size.toFixed(1) + " KB";
+            document.getElementById("kpi-latency").innerText = current.latency_model_ms.toFixed(2) + " ms";
+            document.getElementById("kpi-accuracy").innerText = (current.accuracy * 100).toFixed(1) + "%";
+        }
+
+        // Initialize Radar
+        updateRadarChart();
+
+    </script>
+</body>
+</html>

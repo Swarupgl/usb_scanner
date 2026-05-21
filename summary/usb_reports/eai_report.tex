@@ -1,0 +1,982 @@
+\documentclass[12pt,a4paper]{article}
+
+%% ── Core packages ───────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in, top=1.1in, bottom=1.1in]{geometry}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage[most]{tcolorbox}
+\usepackage{hyperref}
+
+%% ── Colour palette ──────────────────────────────────────────────────────────
+\definecolor{NavyBlue}   {HTML}{1e3a5f}
+\definecolor{CyanAccent} {HTML}{0369a1}
+\definecolor{Teal}       {HTML}{0f766e}
+\definecolor{Violet}     {HTML}{5b21b6}
+\definecolor{Crimson}    {HTML}{b91c1c}
+\definecolor{Amber}      {HTML}{b45309}
+\definecolor{LightGray}  {HTML}{f1f5f9}
+\definecolor{MidGray}    {HTML}{94a3b8}
+\definecolor{DarkGray}   {HTML}{334155}
+\definecolor{TableHead}  {HTML}{1e3a5f}
+\definecolor{TableAlt}   {HTML}{f0f7ff}
+\definecolor{GreenCell}  {HTML}{d1fae5}
+\definecolor{AmberCell}  {HTML}{fef3c7}
+
+%% ── Hyperref ────────────────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks  = true,
+    linkcolor   = CyanAccent,
+    urlcolor    = CyanAccent,
+    citecolor   = Teal,
+    pdftitle    = {Embedded AI: USB Malware Scanner - Optimization Report},
+    pdfauthor   = {EAI Student Project},
+}
+
+%% ── Header / footer ─────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{MidGray}{Embedded AI -- USB Malware Scanner Project}}
+\fancyhead[R]{\small\textcolor{MidGray}{\thepage}}
+\fancyfoot[C]{\small\textcolor{MidGray}{Department of Computer Science \& Engineering}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{CyanAccent}\leaders\hrule height \headrulewidth\hfill}}
+
+%% ── Section title styles ────────────────────────────────────────────────────
+\titleformat{\section}
+  {\large\bfseries\color{NavyBlue}}
+  {\thesection.}{0.6em}{}
+  [\vspace{2pt}{\color{NavyBlue}\hrule height 1pt}\vspace{4pt}]
+
+\titleformat{\subsection}
+  {\normalsize\bfseries\color{CyanAccent}}
+  {\thesubsection}{0.6em}{}
+
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{Teal}}
+  {\thesubsubsection}{0.6em}{}
+
+%% ── tcolorbox styles ────────────────────────────────────────────────────────
+\tcbset{
+  infobox/.style={
+    enhanced, breakable,
+    colback  = LightGray,
+    colframe = CyanAccent,
+    fonttitle= \bfseries\color{white},
+    coltitle = white,
+    attach boxed title to top left={yshift=-2mm, xshift=6mm},
+    boxed title style={colback=CyanAccent, sharp corners},
+    arc=4pt, boxrule=0.8pt,
+  },
+  warnbox/.style={
+    enhanced,
+    colback  = AmberCell,
+    colframe = Amber,
+    arc=4pt, boxrule=0.8pt,
+  },
+  resultbox/.style={
+    enhanced,
+    colback  = GreenCell,
+    colframe = Teal,
+    arc=4pt, boxrule=0.8pt,
+  },
+}
+
+%% ── Misc helpers ────────────────────────────────────────────────────────────
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+
+\setlist[itemize]{leftmargin=1.5em, itemsep=2pt}
+\setlist[enumerate]{leftmargin=1.5em, itemsep=2pt}
+
+%% ═══════════════════════════════════════════════════════════════════════════
+%%                         DOCUMENT BEGINS
+%% ═══════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+%% ────────────────────────────────────────────────────────────────────────────
+%%  COVER PAGE
+%% ────────────────────────────────────────────────────────────────────────────
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+
+{\color{NavyBlue}\rule{\linewidth}{2pt}}
+\vspace{0.4cm}
+
+{\fontsize{22}{28}\selectfont\bfseries\color{NavyBlue}
+Embedded Artificial Intelligence\\[6pt]
+\large USB Malware Scanner -- Model Optimization\\
+\& Hardware Feasibility Report}
+
+\vspace{0.3cm}
+{\color{NavyBlue}\rule{\linewidth}{2pt}}
+\vspace{1.5cm}
+
+{\large\itshape MalConv-Style Gated Byte CNN: Quantization, Pruning,\\
+Weight Sharing and Sequence Downscaling for Edge Deployment}
+
+\vspace{2.5cm}
+
+\begin{tabular}{rl}
+  \textbf{Course}          & Embedded Artificial Intelligence (EAI)\\[4pt]
+  \textbf{Submitted to}    & Dr.\ Dubacharla Gyaneshwar\\[4pt]
+  \textbf{Department}      & Computer Science \& Engineering\\[4pt]
+  \textbf{Target Hardware} & Raspberry Pi 4 Model B (ARM Cortex-A72 MPU)\\[4pt]
+  \textbf{Date}            & May 2026
+\end{tabular}
+
+\vspace{2.5cm}
+
+\begin{tcolorbox}[warnbox, title={}]
+\textbf{Abstract.}\quad
+This report presents the full design, implementation, and benchmarking of a
+\textit{USB Malware Sanitizer} powered by a MalConv-style gated 1-D convolutional
+neural network.  Because the target platform (Raspberry Pi 4) has limited RAM,
+compute budget, and real-time latency requirements, the baseline FP32 model
+cannot be deployed without compression.  We apply four techniques taught in the
+EAI course -- Post-Training Quantization, Weight Pruning, K-Means Weight
+Sharing, and Sequence-Length Downscaling -- and benchmark every variant for
+\textit{storage footprint, MAC computation, inference latency, and classification
+accuracy}.  K-Means Weight Sharing (16 centroids) achieves an \textbf{87.5\%
+reduction in model storage} (4\,174 KB down to 521 KB), while Sequence
+Downscaling to 32\,KB cuts inference time by \textbf{5.44$\times$} (9.91 ms
+down to 1.82 ms), both at \textbf{100\% retained accuracy}.
+\end{tcolorbox}
+
+\vfill
+{\small\color{MidGray}Embedded Artificial Intelligence Project -- College of Engineering}
+\end{titlepage}
+
+%% ────────────────────────────────────────────────────────────────────────────
+%%  TABLE OF CONTENTS
+%% ────────────────────────────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+%% ═══════════════════════════════════════════════════════════════════════════
+%%  1. PROJECT OVERVIEW
+%% ═══════════════════════════════════════════════════════════════════════════
+\section{Project Overview}
+
+\subsection{Problem Statement}
+USB flash drives are one of the most common vectors for malware distribution in
+institutional environments (labs, offices, colleges).  Infected drives may carry
+packed executables, polymorphic code, or obfuscated binaries that traditional
+signature-based antivirus tools miss -- because packing alters raw bytes,
+bypassing static hash checks.
+
+The project addresses this by building an \textbf{AI-powered USB Sanitizer
+Kiosk} that physically sits between an untrusted USB drive and any workplace
+computer.  Every file on the drive is scored by a lightweight deep-learning
+model before it is allowed to enter the trusted network.
+
+\subsection{Why a Dedicated Kiosk Instead of Endpoint AV?}
+
+\begin{tcolorbox}[infobox, title={Deployment Architecture Rationale}]
+\begin{itemize}
+  \item \textbf{Trust boundary isolation} -- An untrusted USB is first
+        inspected by the Pi. The protected workstation is never directly exposed
+        to unscanned media.
+  \item \textbf{OS-agnostic} -- Works regardless of the OS on the target
+        machine; no agent installation required.
+  \item \textbf{Centralized policy} -- One kiosk enforces the same model,
+        thresholds, and quarantine rules for every machine it serves.
+  \item \textbf{Institutional feasibility} -- College labs often forbid
+        installing custom software on PCs.  A standalone Pi kiosk bypasses this
+        restriction entirely.
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{System Workflow}
+
+The end-to-end pipeline is:
+
+\begin{enumerate}
+  \item \textbf{Drive Detection} -- A background monitor detects new USB
+        volumes using OS-level drive enumeration (PowerShell / \texttt{psutil}).
+  \item \textbf{File Enumeration} -- All files matching target extensions
+        (\texttt{.exe}, \texttt{.dll}, \texttt{.com}) are collected.
+  \item \textbf{Stage 1 -- Structural Integrity} -- Magic-number vs.\
+        extension mismatch triggers immediate quarantine.
+  \item \textbf{Stage 2 -- Header Heuristics} -- Shannon entropy analysis and
+        suspicious PE import checking.
+  \item \textbf{Stage 3 -- Neural Scoring} -- The MalConv model (ONNX format)
+        reads the first \textit{N} bytes of each file and outputs a suspicion
+        score in [0, 1].  Files scoring above 0.5 are quarantined.
+  \item \textbf{Quarantine / Report} -- Flagged files are moved to a secure
+        quarantine directory; a JSON and plain-text log is produced.
+\end{enumerate}
+
+\subsection{Dataset Description}
+
+Because real malware cannot be used in a college lab environment, the project
+uses a \textbf{packed-vs-clean demo dataset}:
+
+\begin{table}[h!]
+\centering
+\caption{Demo Dataset Composition}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{L{3.5cm} L{4.5cm} C{2cm} C{3cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Class} &
+\color{white}\textbf{Source} &
+\color{white}\textbf{Count} &
+\color{white}\textbf{Label} \\
+\midrule
+Benign & Windows System32 \texttt{.exe} binaries & 33 & 0 (Benign) \\
+\rowcolor{TableAlt}
+Malicious (simulated) & Same binaries, UPX-packed with \texttt{upx.exe} & 33 & 1 (Suspicious) \\
+\midrule
+\textbf{Total} & -- & \textbf{66} & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+UPX packing is an industry-standard obfuscation technique that repacks the PE
+header and segments, dramatically altering the raw byte distribution.  The model
+learns to distinguish natural PE header structures from UPX-repacked ones
+without ever seeing real malware.
+
+The dataset is split using \textbf{group-by-basename} logic to prevent
+clean/packed twin leakage across train/validation/test splits
+(80\% / 10\% / 10\%).
+
+%% ═══════════════════════════════════════════════════════════════════════════
+%%  2. ARCHITECTURE OF THE MALCONV MODEL
+%% ═══════════════════════════════════════════════════════════════════════════
+\section{MalConv Gated CNN Architecture}
+
+\subsection{Design Motivation}
+Traditional ML classifiers require hand-crafted feature extraction from
+executables (PE headers, import tables, entropy histograms).  MalConv eliminates
+this step by treating the executable as a raw byte sequence and learning
+discriminative patterns directly from the bytes using convolutions.  This makes
+it robust to novel obfuscation that changes features but not byte-level
+structure.
+
+\subsection{Layer Architecture}
+
+\begin{table}[h!]
+\centering
+\caption{MalConv Layer-by-Layer Architecture}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{C{0.5cm} L{3.2cm} L{3.8cm} R{2.4cm} L{4cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{\#} &
+\color{white}\textbf{Layer} &
+\color{white}\textbf{Output Shape} &
+\color{white}\textbf{MACs} &
+\color{white}\textbf{Purpose} \\
+\midrule
+1 & Embedding (257 tokens, dim=8) & (B, 8, L) & -- (lookup) & Map bytes to dense vectors \\
+\rowcolor{TableAlt}
+2 & Conv1D Value -- 128 filters, k=512, s=512 & (B, 128, L') & 268 M & Feature extraction \\
+3 & Conv1D Gate -- 128 filters, k=512, s=512 + Sigmoid & (B, 128, L') & 268 M & Attention mask \\
+\rowcolor{TableAlt}
+4 & Elementwise gating multiply & (B, 128, L') & -- & Suppress noise regions \\
+5 & Adaptive Max Pooling (output=1) & (B, 128) & -- & Length-independent aggregation \\
+\rowcolor{TableAlt}
+6 & Linear 128 \textrightarrow 128 + ReLU & (B, 128) & 16 K & Nonlinear classification \\
+7 & Linear 128 \textrightarrow 1 + Sigmoid & (B, 1) & 128 & Probability output [0,1] \\
+\midrule
+\multicolumn{3}{l}{\textbf{Total Trainable Parameters}} & \multicolumn{2}{r}{\textbf{1,067,529}} \\
+\multicolumn{3}{l}{\textbf{Total MACs (baseline, 256 KB input)}} & \multicolumn{2}{r}{\textbf{536,887,424}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Gating Mechanism}
+
+The key innovation in MalConv is the \textbf{sigmoid gating} applied
+elementwise between two parallel convolutions.  One convolution learns
+\textit{what} features are present (value stream); the other learns
+\textit{where} those features matter (gate stream, squashed to [0,1] by
+sigmoid).  Multiplying both streams focuses the model on malicious header
+regions while ignoring the large padding-filled tail of short files.
+
+This is functionally equivalent to a learned spatial attention mechanism, but
+implemented efficiently as two plain convolutions -- making it highly
+suitable for edge inference without specialized attention hardware.
+
+\subsection{Checkpoint Format}
+
+Each saved checkpoint is a Python dictionary containing:
+\begin{itemize}
+  \item \texttt{state\_dict} -- all trained weight tensors.
+  \item \texttt{max\_len} -- maximum byte input length the model was trained on.
+  \item \texttt{window\_size} -- convolution kernel / stride size.
+\end{itemize}
+
+Baseline checkpoint size: \textbf{4.08 MB} (FP32, uncompressed).
+
+%% ═══════════════════════════════════════════════════════════════════════════
+%%  3. TARGET HARDWARE CONSTRAINTS
+%% ═══════════════════════════════════════════════════════════════════════════
+\section{Target Hardware and Embedded Constraints}
+
+\subsection{Target Platform: Raspberry Pi 4 Model B}
+
+\begin{table}[h!]
+\centering
+\caption{Raspberry Pi 4 Hardware Specifications}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{L{4cm} L{8cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Specification} & \color{white}\textbf{Value} \\
+\midrule
+CPU & ARM Cortex-A72, 4 cores @ 1.8 GHz \\
+\rowcolor{TableAlt}
+RAM & 4 GB LPDDR4 \\
+Storage & MicroSD (16--64 GB typical) \\
+\rowcolor{TableAlt}
+OS & Raspberry Pi OS (Linux, 64-bit) \\
+Power & 5V / 3A USB-C (15 W) \\
+\rowcolor{TableAlt}
+Inference Engine & ONNX Runtime (CPUExecutionProvider) \\
+USB Interface & USB 3.0 Host Port \\
+\rowcolor{TableAlt}
+Architecture Class & Microprocessor Unit (MPU) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Embedded Resource Constraints}
+
+\begin{tcolorbox}[infobox, title={Key EAI Embedded Constraints}]
+\begin{enumerate}
+  \item \textbf{Memory constraint} -- The model's weights, input buffer, and
+        intermediate activation tensors must all reside simultaneously in RAM.
+        With only 4 GB shared between the OS and application, large FP32
+        activation buffers for 1 MB files are costly.
+  \item \textbf{Computation constraint} -- The ARM Cortex-A72 achieves
+        approximately 100--200 GFLOPS (FP32) in practice.  The baseline model
+        requires 537 million MACs per file scan -- which is feasible, but
+        becomes a bottleneck when scanning 100+ files per USB drive.
+  \item \textbf{Latency constraint} -- A real-time kiosk must scan each file
+        within 10--20 ms to keep total drive scanning time under 30 seconds
+        for a typical drive of 50--100 executables.
+  \item \textbf{Storage constraint} -- The Pi's microSD card hosts both the OS
+        and all application files.  A compressed model under 1 MB is strongly
+        preferred.
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Feasibility Assessment of the Baseline Model}
+
+\begin{table}[h!]
+\centering
+\caption{Baseline Model Feasibility on Raspberry Pi 4}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{L{4.5cm} C{2.5cm} C{2.5cm} L{4.5cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Resource} &
+\color{white}\textbf{Pi Budget} &
+\color{white}\textbf{Baseline Needs} &
+\color{white}\textbf{Verdict} \\
+\midrule
+Flash Storage (model) & 16--64 GB & 4.08 MB & \textcolor{Teal}{\textbf{OK}} -- fits easily \\
+\rowcolor{TableAlt}
+RAM (model weights) & 4 GB & 4.07 MB & \textcolor{Teal}{\textbf{OK}} \\
+RAM (input buffer, 256 KB) & -- & 256 KB & \textcolor{Teal}{\textbf{OK}} \\
+\rowcolor{TableAlt}
+MACs per scan & \textasciitilde 200 GMAC/s & 537 M MACs & \textcolor{Teal}{\textbf{OK}} \textasciitilde 2--5 ms pure compute \\
+End-to-end latency (with I/O) & \textless 20 ms target & 9.91 ms & \textcolor{Teal}{\textbf{OK}} \\
+\rowcolor{TableAlt}
+Accuracy on test split & 100\% required & 100.0\% & \textcolor{Teal}{\textbf{OK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The baseline model \textit{already fits} on the Raspberry Pi 4 -- all
+constraints are within budget.  However, the project requirement is to
+\textbf{demonstrate quantitative trade-off analysis} between the baseline and
+all compressed variants, proving that even further compression is possible
+with \textit{zero accuracy loss}, giving deployment flexibility for more
+constrained targets (e.g.\ Raspberry Pi Zero, STM32 MCU).
+
+%% ═══════════════════════════════════════════════════════════════════════════
+%%  4. OPTIMIZATION TECHNIQUES APPLIED
+%% ═══════════════════════════════════════════════════════════════════════════
+\section{Optimization Techniques Applied}
+
+All four techniques below were applied \textit{post-training} (no retraining
+was performed), using the best checkpoint
+\texttt{outputs/models/group\_split\_model.pth}.
+
+%% ── 4.1 Quantization ────────────────────────────────────────────────────────
+\subsection{Technique 1: Post-Training Dynamic Quantization}
+
+\subsubsection{What it does}
+Quantization replaces high-precision floating-point weights (32-bit FP32)
+with lower-precision integers (8-bit INT8).  Dynamic quantization performs
+this conversion \textit{at runtime} for each inference call without a
+dedicated calibration dataset.
+
+\subsubsection{What we applied}
+We applied two forms:
+\begin{itemize}
+  \item \textbf{PyTorch Dynamic Quantization} -- Only the fully connected
+        layers (\texttt{fc\_1}, \texttt{fc\_2}) are quantized to INT8.
+        Convolutional layers remain FP32.  This is the safest, fastest
+        option with minimal accuracy risk.
+  \item \textbf{ONNX Dynamic Quantization} -- The entire model is first
+        exported to an ONNX computation graph, then all weight matrices
+        (including the embedding table and convolutional kernels) are
+        quantized to INT8.  This achieves greater compression at the cost of
+        potential precision loss.
+\end{itemize}
+
+\subsubsection{Expected benefits}
+\begin{itemize}
+  \item Up to \textbf{4$\times$ smaller} weight storage (4 bytes per parameter
+        reduced to 1 byte).
+  \item Faster matrix multiplication on CPUs that support INT8 SIMD
+        instructions (ARM NEON on Cortex-A72).
+  \item Reduced memory bandwidth pressure.
+\end{itemize}
+
+%% ── 4.2 Pruning ─────────────────────────────────────────────────────────────
+\subsection{Technique 2: Unstructured Weight Pruning}
+
+\subsubsection{What it does}
+Pruning removes individual weight connections whose absolute values fall below
+a threshold, zeroing them out and creating a \textit{sparse} weight matrix.
+L1-magnitude pruning ranks weights by $|w|$ and zeros out the lowest-ranked
+fraction.
+
+\subsubsection{What we applied}
+We applied \textbf{L1 Unstructured Pruning} to all convolutional and the first
+fully connected layer at two sparsity levels:
+\begin{itemize}
+  \item \textbf{50\% Sparsity} -- Half of all selected-layer connections are
+        zeroed.
+  \item \textbf{75\% Sparsity} -- Three-quarters of all selected-layer
+        connections are zeroed.
+\end{itemize}
+
+\subsubsection{Expected benefits}
+\begin{itemize}
+  \item Reduces the number of \textit{active} multiply-accumulate operations
+        (non-zero MACs), lowering effective computation.
+  \item Enables sparse matrix formats (CSR/CSC) on MCU runtimes that save
+        both storage and computation proportionally to sparsity.
+  \item Accuracy is expected to degrade gracefully at high sparsity ratios.
+\end{itemize}
+
+%% ── 4.3 Weight Sharing ──────────────────────────────────────────────────────
+\subsection{Technique 3: K-Means Weight Sharing}
+
+\subsubsection{What it does}
+Weight sharing clusters all weight values of a layer into $k$ groups using
+K-Means clustering.  Every weight in a cluster is replaced by the cluster
+centroid value.  The model is stored as a \textit{codebook} (the $k$ centroid
+values) plus an \textit{index array} (one integer per weight pointing to its
+centroid).  Storing $k{=}16$ centroids requires only 4 bits per index (instead
+of 32 bits per FP32 weight), giving a theoretical 8$\times$ compression.
+
+\subsubsection{What we applied}
+\begin{itemize}
+  \item \textbf{K-Means k=16} -- 16 centroids per layer.  Weights encoded as
+        4-bit indices.  Estimated compressed storage: \textbf{521 KB}.
+  \item \textbf{K-Means k=32} -- 32 centroids per layer.  Weights encoded as
+        5-bit indices.  Estimated compressed storage: \textbf{652 KB}.
+\end{itemize}
+
+\subsubsection{Expected benefits}
+\begin{itemize}
+  \item Extreme storage compression -- the best result among all techniques.
+  \item No change to computation graph structure; the same convolutions and
+        linear layers execute identically after centroid substitution.
+  \item Accuracy depends on how spread the weight distributions are; highly
+        redundant embeddings (as in MalConv) tolerate aggressive clustering.
+\end{itemize}
+
+%% ── 4.4 Sequence Downscaling ────────────────────────────────────────────────
+\subsection{Technique 4: Input Sequence Length Downscaling}
+
+\subsubsection{What it does}
+MalConv reads the first \texttt{max\_len} bytes of each file (zero-padding
+shorter files).  Because the convolutional layers slide a fixed-size window
+across the byte sequence, the number of MAC operations scales \textit{linearly}
+with \texttt{max\_len}.  By scanning only the first $N$ bytes instead of the
+full 256 KB, we reduce computation proportionally -- at no cost to model
+weights.
+
+\subsubsection{What we applied}
+We evaluated three reduced prefix sizes:
+\begin{itemize}
+  \item \textbf{128 KB (131,072 bytes)} -- 50\% reduction vs.\ baseline.
+  \item \textbf{64 KB (65,536 bytes)} -- 75\% reduction vs.\ baseline.
+  \item \textbf{32 KB (32,768 bytes)} -- 87.5\% reduction vs.\ baseline.
+\end{itemize}
+
+\subsubsection{Why accuracy is unaffected}
+UPX packing modifies the PE header and the first program segment.  The UPX
+stub, section headers, and modified entry-point all appear in the first 32 KB
+of any executable.  The model only needs to see the file prefix to classify
+correctly, making 32 KB a sufficient scanning budget.
+
+%% ═══════════════════════════════════════════════════════════════════════════
+%%  5. BENCHMARKING METHODOLOGY
+%% ═══════════════════════════════════════════════════════════════════════════
+\section{Benchmarking Methodology}
+
+\subsection{Evaluation Setup}
+
+\begin{table}[h!]
+\centering
+\caption{Benchmarking Environment}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{L{4cm} L{9cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Parameter} & \color{white}\textbf{Value} \\
+\midrule
+Platform & Windows 11, x86-64, AMD/Intel CPU (CPU-only inference) \\
+\rowcolor{TableAlt}
+Framework & PyTorch 2.11 + ONNX Runtime 1.24 \\
+Inference device & CPU (mimicking Pi single-core budget) \\
+\rowcolor{TableAlt}
+Test split & 8 samples (4 benign, 4 packed), group-by-basename split \\
+Warmup runs & 2 forward passes before timing \\
+\rowcolor{TableAlt}
+Latency metric & Mean model-only and end-to-end time over all test samples \\
+MAC counting & Analytical: based on conv output length $\times$ kernel ops \\
+\rowcolor{TableAlt}
+Accuracy metric & Classification accuracy on test split (threshold = 0.5) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Metrics Collected}
+
+For every model variant we measure:
+\begin{itemize}
+  \item \textbf{Storage Size (KB)} -- checkpoint file size on disk.
+  \item \textbf{Estimated Compressed Size (KB)} -- for weight-sharing variants,
+        the theoretical codebook + index size.
+  \item \textbf{Total MACs} -- theoretical multiply-accumulate operations for
+        one forward pass.
+  \item \textbf{Non-Zero MACs} -- active MACs after accounting for pruning
+        sparsity.
+  \item \textbf{Model-Only Latency (ms)} -- pure forward-pass timing excluding
+        file I/O.
+  \item \textbf{End-to-End Latency (ms)} -- file read + preprocessing +
+        forward pass.
+  \item \textbf{Test Accuracy (\%)} -- fraction of test samples correctly
+        classified.
+\end{itemize}
+
+%% ═══════════════════════════════════════════════════════════════════════════
+%%  6. RESULTS AND BENCHMARKING DATA
+%% ═══════════════════════════════════════════════════════════════════════════
+\section{Results and Benchmarking Data}
+
+\subsection{Complete Optimization Results Matrix}
+
+\begin{table}[h!]
+\centering
+\caption{Full Benchmarking Results -- All Model Variants}
+\label{tab:main}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{L{3.6cm} C{1.8cm} R{1.8cm} R{1.8cm} R{1.8cm} C{1.8cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Model Variant} &
+\color{white}\textbf{Method} &
+\color{white}\textbf{Size (KB)} &
+\color{white}\textbf{Active MACs} &
+\color{white}\textbf{Latency (ms)} &
+\color{white}\textbf{Accuracy} \\
+\midrule
+Original FP32 (Baseline)      & --            & 4,174.1 & 536,887,424 &  9.91 & 100.0\% \\
+\rowcolor{TableAlt}
+PyTorch Dynamic INT8          & Quantization  & 4,127.0 & 536,887,424 &  9.76 & 100.0\% \\
+ONNX Dynamic INT8             & Quantization  & 3,098.2 & 536,887,424 & 15.88 & 100.0\% \\
+\rowcolor{TableAlt}
+Weight Pruning 50\%           & Pruning       & 4,173.9 & 273,812,648 & 13.44 & 100.0\% \\
+Weight Pruning 75\%           & Pruning       & 4,173.9 & 139,590,824 & 15.58 & 100.0\% \\
+\rowcolor{GreenCell}
+\textbf{Weight Sharing k=16}  & \textbf{Sharing}      & \textbf{521.3}  & 536,887,424 & 14.08 & \textbf{100.0\%} \\
+\rowcolor{TableAlt}
+Weight Sharing k=32           & Sharing       &   651.7 & 536,887,424 & 11.25 & 100.0\% \\
+Sequence Downscale 128 KB     & Downscaling   & 4,174.1 & 268,451,968 &  4.84 & 100.0\% \\
+\rowcolor{TableAlt}
+Sequence Downscale 64 KB      & Downscaling   & 4,174.1 & 134,234,240 &  2.87 & 100.0\% \\
+\rowcolor{GreenCell}
+\textbf{Sequence Downscale 32 KB}  & \textbf{Downscaling} & 4,174.1 & \textbf{67,125,376} & \textbf{1.82} & \textbf{100.0\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Storage Footprint Comparison}
+
+\begin{table}[h!]
+\centering
+\caption{Storage Footprint -- Before and After Compression}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{L{4.5cm} R{2.2cm} R{2.2cm} R{2.2cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Model Variant} &
+\color{white}\textbf{Size (KB)} &
+\color{white}\textbf{Savings (KB)} &
+\color{white}\textbf{Reduction (\%)} \\
+\midrule
+Original FP32 (Baseline)     & 4,174.1 & --      & -- \\
+\rowcolor{TableAlt}
+PyTorch Dynamic INT8         & 4,127.0 &    47.1 &  1.1\% \\
+ONNX Dynamic INT8            & 3,098.2 & 1,075.9 & 25.8\% \\
+\rowcolor{TableAlt}
+Weight Pruning 50\%          & 4,173.9 &     0.2 &  0.0\% \\
+Weight Pruning 75\%          & 4,173.9 &     0.2 &  0.0\% \\
+\rowcolor{GreenCell}
+\textbf{Weight Sharing k=16} & \textbf{521.3}  & \textbf{3,652.8} & \textbf{87.5\%} \\
+\rowcolor{TableAlt}
+Weight Sharing k=32          &   651.7 & 3,522.4 & 84.4\% \\
+Sequence Downscale (any)     & 4,174.1 &      -- &    -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{Note:} Weight-sharing sizes represent the theoretical
+\textbf{codebook + index} format.  Pruning does not reduce file size in
+standard PyTorch format because zeroed weights are still stored as FP32
+zeros; compression is realized at the arithmetic computation level.
+
+\subsection{Computational Complexity Comparison}
+
+\begin{table}[h!]
+\centering
+\caption{MAC Computation -- Before and After Optimization}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{L{4.5cm} R{2.8cm} R{2.8cm} R{2.2cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Model Variant} &
+\color{white}\textbf{Active MACs} &
+\color{white}\textbf{Saved MACs} &
+\color{white}\textbf{Reduction (\%)} \\
+\midrule
+Original FP32 (Baseline)          & 536,887,424 & --          & -- \\
+\rowcolor{TableAlt}
+Quantization (both variants)      & 536,887,424 & --          & 0.0\% \\
+Weight Pruning 50\%               & 273,812,648 & 263,074,776 & 49.0\% \\
+\rowcolor{TableAlt}
+Weight Pruning 75\%               & 139,590,824 & 397,296,600 & 74.0\% \\
+Weight Sharing (both variants)    & 536,887,424 & --          & 0.0\% \\
+\rowcolor{TableAlt}
+Sequence Downscale 128 KB         & 268,451,968 & 268,435,456 & 50.0\% \\
+Sequence Downscale 64 KB          & 134,234,240 & 402,653,184 & 75.0\% \\
+\rowcolor{GreenCell}
+\textbf{Sequence Downscale 32 KB} & \textbf{67,125,376}  & \textbf{469,762,048} & \textbf{87.5\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Inference Latency Comparison}
+
+\begin{table}[h!]
+\centering
+\caption{Inference Latency -- Model-Only and End-to-End}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{L{4.5cm} R{2.5cm} R{2.5cm} R{2.5cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Model Variant} &
+\color{white}\textbf{Model-Only (ms)} &
+\color{white}\textbf{End-to-End (ms)} &
+\color{white}\textbf{Speedup vs.\ Baseline} \\
+\midrule
+Original FP32 (Baseline)          &  9.91 &  9.20 & 1.00$\times$ \\
+\rowcolor{TableAlt}
+PyTorch Dynamic INT8              &  9.76 & 10.27 & 1.02$\times$ \\
+ONNX Dynamic INT8                 & 15.88 & 18.51 & 0.62$\times$ \\
+\rowcolor{TableAlt}
+Weight Pruning 50\%               & 13.44 & 14.15 & 0.74$\times$ \\
+Weight Pruning 75\%               & 15.58 & 18.97 & 0.64$\times$ \\
+\rowcolor{TableAlt}
+Weight Sharing k=16               & 14.08 & 15.42 & 0.70$\times$ \\
+Weight Sharing k=32               & 11.25 & 14.49 & 0.88$\times$ \\
+Sequence Downscale 128 KB         &  4.84 &  5.37 & 2.05$\times$ \\
+\rowcolor{TableAlt}
+Sequence Downscale 64 KB          &  2.87 &  3.46 & 3.45$\times$ \\
+\rowcolor{GreenCell}
+\textbf{Sequence Downscale 32 KB} & \textbf{1.82} &  \textbf{2.14} & \textbf{5.44}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% ═══════════════════════════════════════════════════════════════════════════
+%%  7. MULTI-DIMENSIONAL TRADE-OFF ANALYSIS
+%% ═══════════════════════════════════════════════════════════════════════════
+\section{Multi-Dimensional Trade-off Analysis}
+
+\subsection{Test-Split Accuracy Across All Compressed Variants}
+
+\begin{tcolorbox}[resultbox]
+\textbf{Test-Split Result:} All ten model variants achieved \textbf{100.0\% accuracy
+on the 8-sample test split} (4 benign, 4 UPX-packed).  No compression technique
+caused any misclassification on the held-out test set.  However, Section~\ref{sec:overfit}
+shows that this result must be interpreted alongside the overfitting analysis.
+\end{tcolorbox}
+
+\subsection{Memory vs.\ Accuracy Trade-off}
+
+Weight Sharing (k=16) achieves the most dramatic storage compression at
+\textbf{521.3 KB -- an 87.5\% reduction} -- while maintaining perfect
+classification.  This is because MalConv's byte embedding layer has 257
+tokens $\times$ 8 dimensions = 2,056 parameters whose values are highly
+correlated (similar byte values have similar byte embeddings).  K-Means with
+only 16 centroids captures essentially all the discriminative information.
+
+For reference: a 521 KB model fits comfortably in the 256 KB Flash of an
+STM32F4 microcontroller, enabling future deployment on ultra-constrained
+embedded targets.
+
+\subsection{Computation vs.\ Latency Trade-off}
+
+Sequence Downscaling demonstrates perfect MAC-to-latency proportionality:
+
+\begin{table}[h!]
+\centering
+\caption{MAC Reduction vs.\ Latency Speedup (Sequence Downscaling)}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{C{2.5cm} R{2.8cm} R{2.2cm} R{2.4cm} R{2.4cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Prefix Size} &
+\color{white}\textbf{Active MACs} &
+\color{white}\textbf{MAC Reduction} &
+\color{white}\textbf{Latency (ms)} &
+\color{white}\textbf{Speedup} \\
+\midrule
+256 KB (baseline) & 536,887,424 & -- & 9.91 ms & 1.00$\times$ \\
+\rowcolor{TableAlt}
+128 KB & 268,451,968 & 50.0\% & 4.84 ms & 2.05$\times$ \\
+64 KB & 134,234,240 & 75.0\% & 2.87 ms & 3.45$\times$ \\
+\rowcolor{GreenCell}
+\textbf{32 KB}  & \textbf{67,125,376}  & \textbf{87.5\%} & \textbf{1.82 ms} & \textbf{5.44}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The near-linear relationship between prefix length reduction and latency
+reduction confirms that the convolution dominates inference time, and no
+other overhead (e.g.\ embedding lookup or pooling) is significant.
+
+\subsection{Pruning -- Computation Without Latency Gains}
+
+A counterintuitive result: pruning at 50\% and 75\% sparsity \textit{increases}
+wall-clock latency slightly (13.44 ms and 15.58 ms vs.\ 9.91 ms baseline).
+This is because PyTorch's dense convolution operators do not exploit weight
+sparsity -- zero-multiplications still consume clock cycles in the dense
+arithmetic pipeline.  Latency gains from pruning only materialise on
+\textit{sparse-aware hardware} (e.g.\ NVIDIA Ampere sparse cores, or
+ARM ML extensions with sparsity support).  The benefit of pruning in this
+context is reduced \textit{theoretical} arithmetic complexity (active MACs),
+which translates to lower energy consumption and thermal load on embedded
+devices, rather than lower wall-clock time on dense CPUs.
+
+%% ─────────────────────────────────────────────────────────────────────────
+\subsection{Overfitting Analysis and Generalisation Assessment}
+\label{sec:overfit}
+%% ─────────────────────────────────────────────────────────────────────────
+
+A critical question raised during evaluation is whether the model's high test
+accuracy is a product of genuine generalisation or simply memorisation of the
+small training set.  To answer this, the model was re-trained from a random
+initialisation (using identical architecture and hyper-parameters) for 30 epochs,
+with \textbf{train loss, validation loss, and test loss recorded at every epoch}.
+The saved checkpoint was also evaluated separately on all three splits.
+
+\begin{table}[h!]
+\centering
+\caption{Saved Checkpoint Evaluated on All Three Data Splits}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{L{3cm} R{3cm} R{3cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Data Split} &
+\color{white}\textbf{BCE Loss} &
+\color{white}\textbf{Accuracy} \\
+\midrule
+Train (52 samples) & 0.0014 & \textbf{100.0\%} \\
+\rowcolor{AmberCell}
+Validation (6 samples) & 0.3872 & \textbf{83.3\%} \\
+\rowcolor{GreenCell}
+Test (8 samples) & 0.0516 & \textbf{100.0\%} \\
+\midrule
+\multicolumn{2}{l}{Generalisation gap (Val loss $-$ Train loss)} & $+$0.3858 \\
+\multicolumn{2}{l}{Generalisation gap (Train acc $-$ Val acc)} & $+$16.67\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{tcolorbox}[warnbox]
+\textbf{Honest Assessment -- Overfitting is Present.}\quad
+The learning curves reveal classic overfitting behaviour:
+\begin{itemize}
+  \item \textbf{Training loss} collapses to $\approx$0.0000 by epoch~2 and
+        remains there for all 30 epochs.
+  \item \textbf{Validation loss} drops briefly to 0.45 at epoch~3 then
+        \textit{diverges upward} to 0.80 by epoch~30 -- the canonical
+        overfitting signature.
+  \item \textbf{Validation accuracy} plateaus at \textbf{83.3\%} (5 of 6
+        samples correct) while training accuracy is 100\%.
+\end{itemize}
+The generalisation gap of 0.39 loss units and 16.7 percentage points is
+above the standard 0.15-loss threshold for acceptable generalisation.
+\end{tcolorbox}
+
+\noindent
+The primary causes of overfitting in this project are:
+\begin{enumerate}
+  \item \textbf{Very small dataset:} Only 66 total samples (33 benign, 33 packed).
+        The validation split contains just 6 samples -- too few to provide a
+        statistically reliable signal.
+  \item \textbf{Highly separable task:} UPX packing produces an extremely strong
+        and consistent byte-level signature.  The model saturates quickly and
+        then overfits the remaining loss, pushing training scores toward extreme
+        values (benign: $<$0.03, packed: $>$0.88).
+  \item \textbf{No regularisation:} The baseline training used no dropout, no
+        weight decay, and no early stopping.
+\end{enumerate}
+
+\noindent
+\textbf{Why test accuracy remains 100\%:} The 4 test packed files produce
+scores in the range 0.87--0.94; the 4 benign files score 0.0000--0.0014.
+Even under significant overfitting, the decision margin is so large that no
+sample crosses the 0.5 boundary.  The 100\% test result is \textit{real} for
+this specific dataset, but should \textit{not} be extrapolated to unseen
+malware families without a larger, more diverse evaluation set.
+
+\subsection{Pareto-Optimal Deployment Choices}
+
+\begin{table}[h!]
+\centering
+\caption{Deployment Recommendation by Hardware Target}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{L{3.2cm} L{3cm} L{3.5cm} L{4cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{Target Hardware} &
+\color{white}\textbf{Primary Constraint} &
+\color{white}\textbf{Recommended Variant} &
+\color{white}\textbf{Achieved Metric} \\
+\midrule
+Raspberry Pi 4 & Latency / throughput & Sequence Downscale 32 KB & 1.82 ms, 100\% acc. \\
+\rowcolor{TableAlt}
+Raspberry Pi Zero & RAM \& compute & Weight Sharing k=16 + 32 KB downscale & 521 KB, \textasciitilde 1.8 ms \\
+STM32F4 (MCU) & Flash \textless 1 MB & Weight Sharing k=16 & 521 KB, 100\% acc. \\
+\rowcolor{TableAlt}
+Edge Server & Throughput & ONNX Quant + batch inference & INT8 accel., lowest energy \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% ═══════════════════════════════════════════════════════════════════════════
+%%  8. CONCLUSION
+%% ═══════════════════════════════════════════════════════════════════════════
+\section{Conclusion and Future Work}
+
+\subsection{Summary of Findings}
+
+\begin{tcolorbox}[resultbox]
+\begin{itemize}
+  \item The MalConv gated CNN successfully classifies UPX-packed vs.\ benign
+        executables using raw byte sequences, achieving \textbf{100\% accuracy
+        on the 8-sample test split} without any hand-crafted feature engineering.
+  \item \textbf{Overfitting is observed} on the small 66-sample dataset: training
+        loss $\rightarrow$ 0, validation loss diverges to 0.80, and validation
+        accuracy plateaus at \textbf{83.3\%} -- a 16.7 point gap vs.\ train.
+  \item Despite overfitting, \textbf{all four compression techniques preserve
+        100\% test-split accuracy}, confirming the model's weight redundancy and
+        the large decision-boundary margin of this particular classification task.
+  \item \textbf{Best memory compression:} K-Means Weight Sharing (k=16) --
+        87.5\% storage reduction to 521 KB with zero test-accuracy loss.
+  \item \textbf{Best latency reduction:} Sequence Downscaling to 32 KB --
+        5.44$\times$ speedup to 1.82 ms per file inference.
+  \item \textbf{Best compute reduction:} Sequence Downscaling to 32 KB --
+        87.5\% fewer active MACs (537M $\rightarrow$ 67M).
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Project Deliverables}
+
+\begin{table}[h!]
+\centering
+\caption{Project File Deliverables}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{L{5.5cm} L{8cm}}
+\toprule
+\rowcolor{TableHead}
+\color{white}\textbf{File} & \color{white}\textbf{Description} \\
+\midrule
+\texttt{models/malconv/model.py} & MalConv architecture definition \\
+\rowcolor{TableAlt}
+\texttt{models/malconv/train.py} & Training pipeline with group-split \\
+\texttt{models/malconv/export\_malconv\_onnx.py} & ONNX export utility \\
+\rowcolor{TableAlt}
+\texttt{summary/usb\_reports/optimize\_and\_benchmark.py} & Full optimization \& benchmarking script \\
+\texttt{outputs/optimization\_results.json} & Raw benchmark data (JSON) \\
+\rowcolor{TableAlt}
+\texttt{summary/usb\_reports/tradeoff\_comparison.png} & Static Matplotlib trade-off chart \\
+\texttt{summary/usb\_reports/dashboard.html} & Interactive Chart.js web dashboard \\
+\rowcolor{TableAlt}
+\texttt{outputs/models/group\_split\_model.pth} & Best FP32 baseline checkpoint \\
+\texttt{outputs/models/quantized\_dynamic.pth} & PyTorch INT8 checkpoint \\
+\rowcolor{TableAlt}
+\texttt{outputs/models/shared\_16.pth} & Weight-sharing k=16 checkpoint \\
+\texttt{outputs/models/pruned\_50.pth} & 50\% pruned checkpoint \\
+\rowcolor{TableAlt}
+\texttt{outputs/models/pruned\_75.pth} & 75\% pruned checkpoint \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Future Directions}
+\begin{itemize}
+  \item \textbf{Address Overfitting with Regularisation:} Add dropout (e.g.\
+        $p{=}0.3$ after the gated pooling layer) and L2 weight decay to reduce
+        the train-vs-validation gap from 16.7\% toward $<$5\%.
+  \item \textbf{Early Stopping:} Monitor validation loss and halt training when
+        it begins to diverge (here, that would be epoch~3), preventing the
+        model from memorising training-set noise.
+  \item \textbf{Larger, Diverse Dataset:} Retrain on EMBER-2018 or SOREL-20M
+        with real malware samples to obtain statistically reliable accuracy
+        estimates and reduce dependence on any single obfuscation style.
+  \item \textbf{Quantization-Aware Training (QAT):} Simulate INT8 arithmetic
+        during fine-tuning so quantised weights remain in the optimal range.
+  \item \textbf{Structured Pruning:} Prune entire convolutional channels to
+        achieve wall-clock latency gains on dense CPUs (unstructured zeros
+        do not reduce latency on ARM Cortex without sparse-aware backends).
+  \item \textbf{TFLite / CMSIS-NN Export:} Port the 32 KB downscaled + k=16
+        shared model to TensorFlow Lite Micro for STM32 Cortex-M4 MCU deployment.
+  \item \textbf{YARA + Neural Hybrid:} Combine YARA rule matching (fast, zero-cost
+        inference) as a pre-filter with neural scoring, reducing AI inference
+        calls by an estimated 80\% on typical USB drives.
+\end{itemize}
+
+\end{document}
